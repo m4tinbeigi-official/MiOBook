@@ -32,3 +32,8 @@ document.querySelectorAll('.feature-card').forEach(card => {
         card.style.background = 'var(--glass-bg)';
     });
 });
+
+// Load Vanilla-Tilt for 3D card effects
+const tiltScript = document.createElement('script');
+tiltScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js';
+document.body.appendChild(tiltScript);

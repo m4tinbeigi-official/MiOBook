@@ -13,7 +13,7 @@
         <div class="logo-area">
             <img src="../assets/icons/icon-48.png" alt="MioBook Logo" class="logo">
             <div class="brand">
-                <h1>میو بوک</h1>
+                <h1>میو بوک 🐾</h1>
                 <p>دستیار خواندن شما</p>
             </div>
         </div>
@@ -56,8 +56,8 @@
             </div>
 
             <div class="empty-state" id="marker-empty">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.886H3.886L8.743 12.5 6.83 18.386 12 14.773l5.17 3.613-1.913-5.886 4.857-3.614h-6.202L12 3Z"/></svg>
-                <p>در این صفحه هنوز هایلایتی ثبت نشده است.</p>
+                <div style="font-size: 40px; margin-bottom: 8px;">🐈‍⬛</div>
+                <p>میو! در این صفحه هنوز هایلایتی ثبت نشده است.</p>
                 <span class="instruction-text">متنی را در صفحه وب انتخاب کنید تا منوی هایلایت ظاهر شود.</span>
             </div>
 
@@ -79,6 +79,29 @@
         <section id="tab-focus" class="tab-content animate-fade-in">
             <div class="section-title">
                 <h2>زمان‌سنج مطالعه و تمرکز</h2>
+            </div>
+
+            <!-- Book Selection for Timer -->
+            <div class="timer-book-selection">
+                <label for="timer-book-select" class="field-label">کتاب در حال مطالعه:</label>
+                <div class="select-row">
+                    <select id="timer-book-select" class="book-select-dropdown">
+                        <option value="">-- بدون کتاب (مطالعه آزاد) --</option>
+                    </select>
+                    <button id="add-quick-book-btn" class="icon-btn clickable" style="font-size: 16px;" title="افزودن کتاب جدید">➕</button>
+                </div>
+            </div>
+
+            <!-- Quick Add Book Form (hidden by default) -->
+            <div id="quick-book-form-container" class="quick-book-form hidden glass">
+                <h3>افزودن کتاب جدید</h3>
+                <input type="text" id="quick-book-title" class="word-text-input" placeholder="عنوان کتاب..." required>
+                <input type="text" id="quick-book-author" class="word-text-input" placeholder="نویسنده..." style="margin-top: 8px;">
+                <input type="number" id="quick-book-pages" class="word-text-input" placeholder="تعداد کل صفحات..." style="margin-top: 8px;">
+                <div class="quick-form-actions" style="margin-top: 12px; display: flex; gap: 8px;">
+                    <button id="quick-book-save-btn" class="btn-primary clickable w-100">افزودن و انتخاب</button>
+                    <button id="quick-book-cancel-btn" class="btn-secondary clickable w-100">انصراف</button>
+                </div>
             </div>
             
             <div class="timer-box glass">
@@ -143,8 +166,8 @@
             </div>
 
             <div class="empty-state" id="words-empty">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                <p>هنوز لغتی ذخیره نشده است.</p>
+                <div style="font-size: 40px; margin-bottom: 8px;">🐈</div>
+                <p>میو! هنوز لغتی ذخیره نشده است.</p>
                 <span class="instruction-text">کلمات ناآشنا را برای مرور بعدی اینجا ذخیره کنید.</span>
             </div>
 

@@ -471,6 +471,112 @@ document.addEventListener('DOMContentLoaded', async () => {
     const timerPauseBtn = document.getElementById('timer-pause-btn');
     const timerResetBtn = document.getElementById('timer-reset-btn');
 
+    // Book Selection Elements
+    const timerBookSelect = document.getElementById('timer-book-select');
+    const addQuickBookBtn = document.getElementById('add-quick-book-btn');
+    const quickBookFormContainer = document.getElementById('quick-book-form-container');
+    const quickBookTitle = document.getElementById('quick-book-title');
+    const quickBookAuthor = document.getElementById('quick-book-author');
+    const quickBookPages = document.getElementById('quick-book-pages');
+    const quickBookSaveBtn = document.getElementById('quick-book-save-btn');
+    const quickBookCancelBtn = document.getElementById('quick-book-cancel-btn');
+
+    // Load and populate books in timer dropdown
+    function loadTimerBooks(selectedId = '') {
+        if (!timerBookSelect) return;
+        chrome.storage.local.get(['books'], (result) => {
+            const books = result.books || [];
+            // Get books that are in progress (status === 'reading')
+            const readingBooks = books.filter(b => b.status === 'reading');
+            
+            // Keep the default option
+            timerBookSelect.innerHTML = '<option value="">-- بدون کتاب (مطالعه آزاد) --</option>';
+            
+            readingBooks.forEach(book => {
+                const opt = document.createElement('option');
+                opt.value = book.id;
+                opt.textContent = `${book.title} ${book.author ? `(اثر ${book.author})` : ''}`;
+                if (book.id === selectedId) {
+                    opt.selected = true;
+                }
+                timerBookSelect.appendChild(opt);
+            });
+        });
+    }
+
+    // Initialize list
+    loadTimerBooks();
+
+    // Listen for books storage changes to sync dropdown
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.books) {
+            const currentSelectedValue = timerBookSelect ? timerBookSelect.value : '';
+            loadTimerBooks(currentSelectedValue);
+        }
+    });
+
+    // Form Toggle and Handlers
+    if (addQuickBookBtn) {
+        addQuickBookBtn.addEventListener('click', () => {
+            if (quickBookFormContainer) {
+                quickBookFormContainer.classList.toggle('hidden');
+                if (!quickBookFormContainer.classList.contains('hidden') && quickBookTitle) {
+                    quickBookTitle.focus();
+                }
+            }
+        });
+    }
+
+    if (quickBookCancelBtn) {
+        quickBookCancelBtn.addEventListener('click', () => {
+            if (quickBookFormContainer) {
+                quickBookFormContainer.classList.add('hidden');
+            }
+            if (quickBookTitle) quickBookTitle.value = '';
+            if (quickBookAuthor) quickBookAuthor.value = '';
+            if (quickBookPages) quickBookPages.value = '';
+        });
+    }
+
+    if (quickBookSaveBtn) {
+        quickBookSaveBtn.addEventListener('click', () => {
+            const title = quickBookTitle ? quickBookTitle.value.trim() : '';
+            const author = quickBookAuthor ? quickBookAuthor.value.trim() : '';
+            const totalPages = quickBookPages ? parseInt(quickBookPages.value) || 0 : 0;
+
+            if (!title) {
+                alert('میو! لطفاً عنوان کتاب را وارد کنید. 🐾');
+                return;
+            }
+
+            const newBook = {
+                id: 'book-' + Date.now(),
+                title: title,
+                author: author || 'ناشناس',
+                totalPages: totalPages,
+                currentPage: 0,
+                status: 'reading',
+                coverUrl: '',
+                addedAt: Date.now()
+            };
+
+            chrome.storage.local.get(['books'], (result) => {
+                const list = result.books || [];
+                list.push(newBook);
+                chrome.storage.local.set({ books: list }, () => {
+                    if (quickBookFormContainer) {
+                        quickBookFormContainer.classList.add('hidden');
+                    }
+                    if (quickBookTitle) quickBookTitle.value = '';
+                    if (quickBookAuthor) quickBookAuthor.value = '';
+                    if (quickBookPages) quickBookPages.value = '';
+                    
+                    loadTimerBooks(newBook.id);
+                });
+            });
+        });
+    }
+
     let timerInterval = null;
     let timerState = 'focus';
     let durationSeconds = 25 * 60;
@@ -517,13 +623,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (durationMinutes < 1) return;
 
-        chrome.storage.local.get(['readingLogs'], (result) => {
+        chrome.storage.local.get(['readingLogs', 'books'], (result) => {
             const logs = result.readingLogs || [];
+            const books = result.books || [];
+
+            let sessionTitle = 'مطالعه آفلاین';
+            let sessionUrl = 'custom';
+            let bookId = '';
+
+            const selectedBookId = timerBookSelect ? timerBookSelect.value : '';
+            if (selectedBookId) {
+                const book = books.find(b => b.id === selectedBookId);
+                if (book) {
+                    sessionTitle = `کتاب: ${book.title}`;
+                    sessionUrl = `book://${book.id}`;
+                    bookId = book.id;
+                }
+            } else if (activeTab) {
+                sessionTitle = activeTab.title ? activeTab.title.substring(0, 50) : 'مطالعه آزاد';
+                sessionUrl = activeTab.url || 'custom';
+            }
+
             logs.push({
                 timestamp: Date.now(),
                 durationMinutes: durationMinutes,
-                url: activeTab && activeTab.url ? activeTab.url : 'custom',
-                pageTitle: activeTab && activeTab.title ? activeTab.title.substring(0, 50) : 'مطالعه آفلاین'
+                url: sessionUrl,
+                pageTitle: sessionTitle,
+                bookId: bookId
             });
             chrome.storage.local.set({ readingLogs: logs });
         });
@@ -613,18 +739,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     triggerReaderBtn.addEventListener('click', async () => {
         const activeTab = await getActiveTab();
         if (!activeTab || !activeTab.id || activeTab.url.startsWith('chrome://')) {
-            alert('حالت خواندن در این صفحه قابل استفاده نیست.');
+            alert('میو! حالت خواندن در این صفحه قابل استفاده نیست. 🐈');
             return;
         }
 
         chrome.tabs.sendMessage(activeTab.id, { action: "trigger-reader-mode" })
-            .catch(() => alert('لطفا صفحه را یکبار ریفرش کنید تا اسکریپت فعال شود.'));
+            .catch(() => alert('میو! لطفا صفحه را یکبار ریفرش کنید تا اسکریپت فعال شود. 🐾'));
     });
 
     generateEpubBtn.addEventListener('click', async () => {
         const activeTab = await getActiveTab();
         if (!activeTab || !activeTab.id || activeTab.url.startsWith('chrome://')) {
-            alert('امکان استخراج این صفحه وجود ندارد.');
+            alert('میو! امکان استخراج این صفحه وجود ندارد. 🐈');
             return;
         }
 

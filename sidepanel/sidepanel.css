@@ -315,6 +315,67 @@ body {
     border-top: 1px solid var(--border-color);
 }
 
+/* Book selector styles in Focus tab */
+.timer-book-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+.timer-book-selection .field-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.timer-book-selection .select-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+}
+
+.book-select-dropdown {
+    flex-grow: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-family: var(--font-family);
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color var(--transition-fast);
+    direction: rtl;
+    cursor: pointer;
+}
+
+.book-select-dropdown:focus {
+    border-color: var(--accent-color);
+}
+
+.quick-book-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    width: 100%;
+}
+
+.quick-book-form h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
 /* Timer styles */
 .timer-box {
     display: flex;
@@ -561,3 +622,28 @@ body {
     border: 1px solid var(--border-color);
 }
 
+
+/* ========================================= */
+/* 🐾 CAT THEME (فاز گربه) EXTENSIONS 🐾 */
+/* ========================================= */
+
+/* Cat Tail Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--accent-color), var(--accent-secondary));
+    border-radius: 20px;
+    border: 3px solid var(--bg-main);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #9d6dfc, #33dfff);
+}
+
+/* Small paw prints for buttons */
+.btn-primary:active, .btn-secondary:active, .tab-link:active {
+    transform: scale(0.95);
+}

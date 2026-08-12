@@ -23,34 +23,34 @@
             </div>
             
             <ul class="nav-links">
-                <li class="nav-item active">
+                <li class="nav-item active" data-tab="dashboard">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span>Dashboard</span>
+                    <span>Dashboard 🐾</span>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" data-tab="library">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path></svg>
-                    <span>My Library</span>
+                    <span>My Library 🐾</span>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" data-tab="explore">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span>Explore</span>
+                    <span>Explore 🐾</span>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" data-tab="wishlist">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                    <span>Wishlist</span>
+                    <span>Wishlist 🐾</span>
                 </li>
             </ul>
 
             <div class="sidebar-spacer"></div>
 
             <ul class="nav-links">
-                <li class="nav-item" id="theme-toggle-btn">
+                <li class="nav-item" id="theme-toggle-btn" data-tab="settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Settings</span>
+                    <span>Settings 🐾</span>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" id="profile-nav-btn" data-tab="profile">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <span>Profile</span>
+                    <span>Profile 🐾</span>
                 </li>
             </ul>
         </nav>
@@ -79,42 +79,114 @@
 
             <div class="dashboard-scroll-area">
                 
-                <!-- Currently Reading Section -->
-                <section class="dashboard-section currently-reading-section hidden" id="currently-reading-section">
-                    <div class="section-header">
-                        <h2>Currently Reading</h2>
-                    </div>
-                    <div class="reading-cards-container" id="currently-reading-container">
-                        <!-- Dynamic reading cards injected here -->
-                    </div>
-                </section>
+                <!-- Dashboard Tab View -->
+                <div id="dashboard-view" class="tab-view-container">
+                    <!-- Currently Reading Section -->
+                    <section class="dashboard-section currently-reading-section hidden" id="currently-reading-section">
+                        <div class="section-header">
+                            <h2>Currently Reading</h2>
+                        </div>
+                        <div class="reading-cards-container" id="currently-reading-container">
+                            <!-- Dynamic reading cards injected here -->
+                        </div>
+                    </section>
 
-                <!-- My Library Section -->
-                <section class="dashboard-section my-library-section">
-                    <div class="section-header">
-                        <h2>My Library</h2>
-                        <a href="#" class="see-all-link">See all</a>
-                    </div>
-                    
-                    <div class="shelf-filters">
-                        <button class="filter-btn active" data-filter="all">All</button>
-                        <button class="filter-btn" data-filter="reading">Reading</button>
-                        <button class="filter-btn" data-filter="read">Completed</button>
-                        <button class="filter-btn" data-filter="toRead">To Read</button>
-                        <button class="btn-primary clickable add-manual-btn" id="add-book-btn">
-                            + Add Book
-                        </button>
-                    </div>
+                    <!-- My Library Section -->
+                    <section class="dashboard-section my-library-section">
+                        <div class="section-header">
+                            <h2>My Library</h2>
+                            <a href="#" class="see-all-link">See all</a>
+                        </div>
+                        
+                        <div class="shelf-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="reading">Reading</button>
+                            <button class="filter-btn" data-filter="read">Completed</button>
+                            <button class="filter-btn" data-filter="toRead">To Read</button>
+                            <button class="btn-primary clickable add-manual-btn" id="add-book-btn">
+                                + Add Book
+                            </button>
+                        </div>
 
-                    <div class="library-grid" id="bookshelf-container">
-                        <!-- Dynamic book grid injected here -->
-                    </div>
-                    
-                    <div class="empty-state hidden" id="shelf-empty">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
-                        <p>No books in your library yet.</p>
-                    </div>
-                </section>
+                        <div class="library-grid" id="bookshelf-container">
+                            <!-- Dynamic book grid injected here -->
+                        </div>
+                        
+                        <div class="empty-state hidden" id="shelf-empty">
+                            <div style="font-size: 48px; margin-bottom: 16px;">🐈‍⬛</div>
+                            <p>میو! اینجا خیلی خلوته، هنوز کتابی اضافه نکردی.</p>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Explore / Community Tab View -->
+                <div id="explore-view" class="tab-view-container hidden" style="padding: 0 8px;">
+                    <section class="dashboard-section explore-section">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; direction: rtl;">
+                            <h2>جامعه کتاب‌خوان‌ها 📡</h2>
+                            <button class="btn-primary clickable" id="refresh-community-btn" style="padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+                                🔄 بروزرسانی فید
+                            </button>
+                        </div>
+
+                        <div class="firebase-warning-card glass hidden" id="firebase-setup-warning" style="padding: 20px; border-radius: var(--radius-md); border-right: 4px solid var(--accent-color); margin-bottom: 24px; background: rgba(140, 82, 255, 0.05); text-align: right; direction: rtl;">
+                            <h3 style="color: var(--accent-color); margin-top: 0; font-size: 16px;">⚠️ پیکربندی اتصال انجام نشده است</h3>
+                            <p style="font-size: 13px; margin: 8px 0; line-height: 1.6; color: var(--text-primary);">
+                                برای مشاهده کتاب‌هایی که دیگران در حال مطالعه آن‌ها هستند و اشتراک‌گذاری وضعیت خود، ابتدا باید متغیرهای اتصال را در فایل <code>scripts/social-db.js</code> تنظیم کنید.
+                            </p>
+                        </div>
+
+                        <div class="social-feed-grid" id="social-feed-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; direction: rtl; text-align: right;">
+                            <!-- Dynamically loaded social status cards -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Profile Tab View -->
+                <div id="profile-view" class="tab-view-container hidden" style="padding: 0 8px;">
+                    <section class="dashboard-section profile-section" style="direction: rtl; text-align: right;">
+                        <div class="section-header" style="margin-bottom: 24px;">
+                            <h2>پروفایل کاربری 👤</h2>
+                        </div>
+
+                        <div class="profile-card-container glass" style="max-width: 480px; padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); margin: 0 auto;">
+                            <div id="profile-logged-out" style="text-align: center; padding: 20px 0;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">🔑</div>
+                                <h3 style="margin-bottom: 8px; font-size: 18px; font-weight: 700;">به حساب کاربری گوگل خود متصل شوید</h3>
+                                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; line-height: 1.6;">
+                                    با ورود به اکانت گوگل (جیمیل)، می‌توانید پیشرفت مطالعه خود را با جامعه کتاب‌خوان‌ها به اشتراک بگذارید و ببینید دیگران در حال خواندن چه کتاب‌هایی هستند.
+                                </p>
+                                <button class="btn-primary clickable" id="profile-login-btn" style="padding: 10px 20px; border-radius: 100px; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; margin: 0 auto;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.111 4.114a5.773 5.773 0 0 1-5.774-5.773a5.773 5.773 0 0 1 5.774-5.774c1.498 0 2.861.548 3.92 1.45l3.057-3.056C19.18 1.848 15.932 1 12.24 1C6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 11.753-4.665 11.753-11.24c0-.7-.077-1.378-.219-1.955H12.24z"/></svg>
+                                    <span>ورود با اکانت گوگل (Gmail)</span>
+                                </button>
+                                <div id="login-error-msg" style="color: #e63946; margin-top: 12px; font-size: 12px; font-weight: 500;"></div>
+                            </div>
+
+                            <div id="profile-logged-in" class="hidden" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                                <img id="profile-user-avatar" src="../assets/icons/icon-48.png" alt="Avatar" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--accent-color); box-shadow: 0 4px 16px var(--accent-glow); object-fit: cover;">
+                                <div style="text-align: center;">
+                                    <h3 id="profile-user-name" style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">کتاب‌خوان</h3>
+                                    <p id="profile-user-email" style="color: var(--text-secondary); font-size: 13px; margin: 4px 0 0 0;"></p>
+                                </div>
+                                
+                                <hr style="width: 100%; border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+
+                                <div style="width: 100%;">
+                                    <h4 style="margin: 0 0 8px 0; font-size: 13px; color: var(--text-secondary);">وضعیت اشتراک‌گذاری فید جامعه:</h4>
+                                    <div class="glass" style="padding: 12px; border-radius: var(--radius-md); background: rgba(0,210,255,0.02); border: 1px solid rgba(0,210,255,0.1); display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="font-size: 12px;">فعالیت مطالعه من به صورت عمومی در فید نمایش داده می‌شود.</span>
+                                        <span style="color: #00d2ff; font-weight: bold; font-size: 12px;">🟢 عمومی (Goodreads-style)</span>
+                                    </div>
+                                </div>
+
+                                <button class="btn-secondary clickable" id="profile-logout-btn" style="padding: 8px 16px; border-radius: 100px; color: #ff6b6b; border-color: rgba(255,107,107,0.2); font-weight: bold; width: 100%; margin-top: 8px;">
+                                    خروج از حساب کاربری
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
                 
             </div>
         </main>
@@ -185,6 +257,27 @@
                     </div>
                 </div>
 
+                <!-- Social Reading Broadcast Control -->
+                <div class="social-reading-controls" id="social-reading-controls" style="margin: 16px 0; padding: 16px; border-radius: var(--radius-md); background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; direction: rtl; text-align: right;">
+                    <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);" id="social-reading-status-label">اعلام وضعیت مطالعه به دوستان:</span>
+                        <span style="font-size: 11px; color: var(--text-secondary);" id="social-reading-status-desc font-family: var(--font-family);">شروع مطالعه این کتاب را به جامعه کتاب‌خوان‌ها خبر دهید.</span>
+                    </div>
+                    <button class="btn-primary clickable" id="toggle-active-reading-btn" style="padding: 8px 16px; font-size: 12px; border-radius: 20px; font-weight: bold; background: var(--accent-color); border: none; color: white;">
+                        📢 اعلام شروع مطالعه
+                    </button>
+                </div>
+
+                <!-- Bookstore Comparison Section -->
+                <div class="bookstore-comparison-section" id="details-bookstore-comparison">
+                    <div class="bookstore-comparison-title">
+                        <span>🛒 نسخه دیجیتال و قیمت در طاقچه و فیدیبو</span>
+                    </div>
+                    <div class="bookstore-list" id="details-bookstore-list">
+                        <div style="font-size: 11px; text-align: center; color: var(--text-muted);">در حال جستجوی موجودی در طاقچه و فیدیبو...</div>
+                    </div>
+                </div>
+
                 <div class="divider">به‌روزرسانی پیشرفت مطالعه</div>
                 
                 <div class="progress-update-form">
@@ -214,6 +307,7 @@
     <div id="dist-chart-area" class="hidden"></div>
     <div id="monthly-chart" class="hidden"></div>
 
+    <script src="../scripts/social-db.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

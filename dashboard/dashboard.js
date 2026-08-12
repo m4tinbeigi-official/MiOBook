@@ -477,6 +477,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateCurrentPageInput.max = book.totalPages;
         }
 
+        // Update social reading live broadcast controls
+        chrome.storage.local.get(['auth', 'activeReadingBook'], (result) => {
+            const socialControls = document.getElementById('social-reading-controls');
+            const toggleBtn = document.getElementById('toggle-active-reading-btn');
+            
+            if (socialControls && toggleBtn) {
+                if (result.auth && book.status === 'reading') {
+                    socialControls.classList.remove('hidden');
+                    
+                    const isActive = result.activeReadingBook && result.activeReadingBook.id === book.id;
+                    if (isActive) {
+                        toggleBtn.innerText = "⏸️ توقف اعلام مطالعه فعال";
+                        toggleBtn.style.background = "#e63946";
+                    } else {
+                        toggleBtn.innerText = "📢 اعلام شروع مطالعه";
+                        toggleBtn.style.background = "var(--accent-color)";
+                    }
+                } else {
+                    socialControls.classList.add('hidden');
+                }
+            }
+        });
+
+        // Bookstore comparison check
+        loadBookstoreComparison(book);
+
         bookDetailsModal.classList.remove('hidden');
     }
 
@@ -522,12 +548,66 @@ document.addEventListener('DOMContentLoaded', async () => {
                         delete list[idx].completedAt;
                     }
 
-                    chrome.storage.local.set({ books: list }, () => {
+                     chrome.storage.local.set({ books: list }, () => {
+                        // Sync with Server/Firestore if user is authenticated
+                        chrome.storage.local.get(['auth', 'activeReadingBook'], (res) => {
+                            if (res.auth) {
+                                const isActive = res.activeReadingBook && res.activeReadingBook.id === activeBook.id;
+                                if (isActive) {
+                                    res.activeReadingBook.currentPage = newPage;
+                                    chrome.storage.local.set({ activeReadingBook: res.activeReadingBook });
+                                }
+                                const updatedStatus = newPage === activeBook.totalPages ? 'read' : 'reading';
+                                publishReadingStatus(activeBook.title, activeBook.author, newPage, activeBook.totalPages, updatedStatus, isActive);
+                            }
+                        });
+
                         bookDetailsModal.classList.add('hidden');
                         loadBookshelf();
                         loadGoals();
                         renderCharts();
                         activeBook = null;
+                    });
+                }
+            });
+        });
+    }
+
+    const toggleActiveReadingBtn = document.getElementById('toggle-active-reading-btn');
+    if (toggleActiveReadingBtn) {
+        toggleActiveReadingBtn.addEventListener('click', () => {
+            if (!activeBook) return;
+            
+            chrome.storage.local.get(['activeReadingBook', 'auth'], (result) => {
+                if (!result.auth) return;
+                
+                const isActive = result.activeReadingBook && result.activeReadingBook.id === activeBook.id;
+                const toggleBtn = document.getElementById('toggle-active-reading-btn');
+                
+                if (isActive) {
+                    // Stop active reading
+                    chrome.storage.local.remove('activeReadingBook', () => {
+                        if (toggleBtn) {
+                            toggleBtn.innerText = "📢 اعلام شروع مطالعه";
+                            toggleBtn.style.background = "var(--accent-color)";
+                        }
+                        publishReadingStatus(activeBook.title, activeBook.author, activeBook.currentPage, activeBook.totalPages, activeBook.status, false);
+                    });
+                } else {
+                    // Start active reading
+                    const activeInfo = {
+                        id: activeBook.id,
+                        title: activeBook.title,
+                        author: activeBook.author,
+                        currentPage: activeBook.currentPage,
+                        totalPages: activeBook.totalPages
+                    };
+                    chrome.storage.local.set({ activeReadingBook: activeInfo }, () => {
+                        if (toggleBtn) {
+                            toggleBtn.innerText = "⏸️ توقف اعلام مطالعه فعال";
+                            toggleBtn.style.background = "#e63946";
+                        }
+                        publishReadingStatus(activeBook.title, activeBook.author, activeBook.currentPage, activeBook.totalPages, activeBook.status, true);
                     });
                 }
             });
@@ -581,6 +661,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     function resetModalForm() {
         if (manualForm) manualForm.reset();
         delete manualForm.dataset.coverUrl;
+        delete manualForm.dataset.storeLink;
+        delete manualForm.dataset.storeSource;
         const results = document.getElementById('search-results-list');
         if (results) {
             results.innerHTML = '';
@@ -608,7 +690,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 currentPage: status === 'read' ? totalPages : 0,
                 status,
                 coverUrl,
-                addedAt: Date.now()
+                addedAt: Date.now(),
+                storeLink: manualForm.dataset.storeLink || '',
+                storeSource: manualForm.dataset.storeSource || ''
             };
 
             chrome.storage.local.get(['books'], (result) => {
@@ -626,79 +710,354 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-    // --- 9. OpenLibrary Quick Search (Right Sidebar) ---
+    // --- 9. Unified Bookstore & OpenLibrary Search ---
     const searchInput = document.getElementById('book-search-input');
     const searchBtn = document.getElementById('book-search-btn');
     const searchResultsList = document.getElementById('search-results-list');
 
-    if (searchBtn && searchInput) {
-        searchBtn.addEventListener('click', async () => {
-            const query = searchInput.value.trim();
-            if (!query) return;
-
-            searchBtn.innerText = 'جستجو...';
-            searchBtn.disabled = true;
-
-            try {
-                const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5`);
-                const data = await response.json();
-                
-                searchBtn.innerText = 'جستجو';
-                searchBtn.disabled = false;
-
-                if (data.docs && data.docs.length > 0) {
-                    renderSearchResults(data.docs);
+    if (searchInput) {
+        // Trigger search on Enter keypress
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (searchBtn) {
+                    searchBtn.click();
                 } else {
-                    searchResultsList.innerHTML = '<div style="padding: 10px; text-align: center; font-size:11px;">کتابی پیدا نشد. اطلاعات را دستی وارد کنید.</div>';
-                    searchResultsList.classList.remove('hidden');
+                    performBookSearch();
                 }
-            } catch (err) {
-                console.error("OpenLibrary search failed:", err);
-                searchBtn.innerText = 'جستجو';
-                searchBtn.disabled = false;
-                searchResultsList.innerHTML = '<div style="padding: 10px; text-align: center; color: #e63946; font-size:11px;">خطا در اتصال به اینترنت.</div>';
-                searchResultsList.classList.remove('hidden');
             }
         });
     }
 
-    function renderSearchResults(docs) {
+    if (searchBtn && searchInput) {
+        searchBtn.addEventListener('click', () => {
+            performBookSearch();
+        });
+    }
+
+    async function performBookSearch() {
+        const query = searchInput.value.trim();
+        if (!query) return;
+
+        if (searchBtn) {
+            searchBtn.innerText = 'جستجو...';
+            searchBtn.disabled = true;
+        }
+
+        try {
+            // Run parallel search on Taaghche, Fidibo, and OpenLibrary
+            const [taaghcheResults, fidiboResults, openLibraryResults] = await Promise.all([
+                searchTaaghcheAPI(query),
+                searchFidiboAPI(query),
+                searchOpenLibraryAPI(query)
+            ]);
+
+            if (searchBtn) {
+                searchBtn.innerText = 'جستجو';
+                searchBtn.disabled = false;
+            }
+
+            // Combine and merge results
+            const combinedResults = [];
+            
+            // Add source metadata to results
+            taaghcheResults.forEach(item => {
+                combinedResults.push({
+                    id: item.id,
+                    title: item.title,
+                    author: item.category || 'کتاب الکترونیکی طاقچه',
+                    coverUrl: `https://img.taaghche.com/${item.type === 'audioBook' ? 'audioCover' : 'frontCover'}/${item.id}.jpg`,
+                    source: 'taaghche',
+                    sourceLabel: 'طاقچه',
+                    link: `https://taaghche.com/book/${item.id}`,
+                    pages: 200 // default
+                });
+            });
+
+            fidiboResults.forEach(item => {
+                const authorLabel = item.content_type === 'audiobook' ? 'کتاب صوتی فیدیبو' : 'کتاب الکترونیکی فیدیبو';
+                combinedResults.push({
+                    id: item.id,
+                    title: item.title,
+                    author: authorLabel,
+                    coverUrl: item.image,
+                    source: 'fidibo',
+                    sourceLabel: 'فیدیبو',
+                    link: `https://fidibo.com/book/${item.id}`,
+                    pages: 200 // default
+                });
+            });
+
+            openLibraryResults.forEach(item => {
+                combinedResults.push({
+                    id: item.id,
+                    title: item.title,
+                    author: item.author,
+                    coverUrl: item.coverUrl,
+                    source: 'openlibrary',
+                    sourceLabel: 'OpenLibrary',
+                    link: item.link,
+                    pages: item.pages
+                });
+            });
+
+            if (combinedResults.length > 0) {
+                renderSearchResults(combinedResults);
+            } else {
+                searchResultsList.innerHTML = '<div style="padding: 12px; text-align: center; font-size:11px; color: var(--text-secondary);">کتابی یافت نشد. اطلاعات را دستی وارد کنید.</div>';
+                searchResultsList.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error("Unified search failed:", err);
+            if (searchBtn) {
+                searchBtn.innerText = 'جستجو';
+                searchBtn.disabled = false;
+            }
+            searchResultsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #e63946; font-size:11px;">خطا در برقراری ارتباط با پلتفرم‌ها.</div>';
+            searchResultsList.classList.remove('hidden');
+        }
+    }
+
+    async function searchOpenLibraryAPI(query) {
+        try {
+            const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=3`);
+            const data = await response.json();
+            if (data.docs) {
+                return data.docs.map(doc => ({
+                    id: doc.key,
+                    title: doc.title,
+                    author: doc.author_name ? doc.author_name[0] : 'نامشخص',
+                    coverUrl: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : '',
+                    link: `https://openlibrary.org${doc.key}`,
+                    pages: doc.number_of_pages_median || 200
+                }));
+            }
+        } catch (e) {
+            console.error("OpenLibrary API error:", e);
+        }
+        return [];
+    }
+
+    function renderSearchResults(results) {
         if (!searchResultsList) return;
         searchResultsList.innerHTML = '';
         searchResultsList.classList.remove('hidden');
 
-        docs.forEach(doc => {
-            const item = document.createElement('div');
-            item.className = 'search-result-item clickable';
-            
-            const author = doc.author_name ? doc.author_name[0] : 'نامشخص';
-            const pages = doc.number_of_pages_median || 0;
-            const coverId = doc.cover_i;
-            const coverUrl = coverId ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg` : '';
+        results.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'search-result-item';
 
-            item.innerHTML = `
+            row.innerHTML = `
+                ${item.coverUrl ? `<img class="search-result-cover" src="${item.coverUrl}" alt="${escapeHtml(item.title)}">` : `<div class="search-result-cover" style="display:flex;align-items:center;justify-content:center;font-size:16px;">📖</div>`}
                 <div class="search-result-info">
-                    <span class="search-result-title">${escapeHtml(doc.title)}</span>
-                    <span class="search-result-author">${escapeHtml(author)} (${pages > 0 ? pages + ' صفحه' : 'بدون صفحه'})</span>
+                    <span class="search-result-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</span>
+                    <span class="search-result-author">${escapeHtml(item.author)}</span>
+                    <div class="search-result-meta">
+                        <span class="search-badge ${item.source}">${item.sourceLabel}</span>
+                    </div>
                 </div>
-                <button class="btn-secondary clickable select-search-btn" style="padding: 4px 8px; font-size: 10px;">انتخاب</button>
+                <button class="btn-secondary clickable select-search-btn">انتخاب</button>
             `;
 
-            item.addEventListener('click', () => {
-                document.getElementById('book-title').value = doc.title;
-                document.getElementById('book-author').value = author;
-                document.getElementById('book-pages').value = pages;
+            const selectBtn = row.querySelector('.select-search-btn');
+            const handleSelect = (e) => {
+                e.stopPropagation();
+                document.getElementById('book-title').value = item.title;
+                document.getElementById('book-author').value = item.source === 'openlibrary' ? item.author : '';
+                document.getElementById('book-pages').value = item.pages;
                 
-                if (manualForm) manualForm.dataset.coverUrl = coverUrl;
+                if (manualForm) {
+                    manualForm.dataset.coverUrl = item.coverUrl;
+                    manualForm.dataset.storeLink = item.link;
+                    manualForm.dataset.storeSource = item.source;
+                }
+                
                 searchResultsList.classList.add('hidden');
                 searchResultsList.innerHTML = '';
 
                 // Open manual modal for user confirmation/completion
                 if (addBookModal) addBookModal.classList.remove('hidden');
-            });
+            };
 
-            searchResultsList.appendChild(item);
+            row.addEventListener('click', handleSelect);
+            selectBtn.addEventListener('click', handleSelect);
+
+            searchResultsList.appendChild(row);
         });
+    }
+
+    // Close search results dropdown on click outside
+    document.addEventListener('click', (e) => {
+        if (searchResultsList && !searchResultsList.classList.contains('hidden')) {
+            if (!searchInput.contains(e.target) && !searchResultsList.contains(e.target) && (!searchBtn || !searchBtn.contains(e.target))) {
+                searchResultsList.classList.add('hidden');
+            }
+        }
+    });
+
+    // --- Bookstore Comparison & Availability Checking Functions ---
+    async function loadBookstoreComparison(book) {
+        const detailsBookstoreList = document.getElementById('details-bookstore-list');
+        if (!detailsBookstoreList) return;
+
+        detailsBookstoreList.innerHTML = '<div style="font-size: 11px; text-align: center; color: var(--text-muted);">در حال بررسی موجودی کتاب در طاقچه و فیدیبو...</div>';
+
+        try {
+            const title = book.title;
+            // Clean title for search
+            const cleanTitle = title.replace(/\s*\(.*?\)\s*/g, '').replace(/[\u200c]/g, ' ').trim();
+
+            // Run search on both stores in parallel
+            const [taaghcheResults, fidiboResults] = await Promise.all([
+                searchTaaghcheAPI(cleanTitle),
+                searchFidiboAPI(cleanTitle)
+            ]);
+
+            detailsBookstoreList.innerHTML = '';
+            let matchesFound = 0;
+
+            // Render Taaghche results
+            if (taaghcheResults && taaghcheResults.length > 0) {
+                // Filter matches
+                const matches = taaghcheResults.filter(item => checkTitleMatch(cleanTitle, item.title));
+                for (const item of matches.slice(0, 2)) {
+                    matchesFound++;
+                    const priceText = await fetchTaaghchePriceInfo(item.id, item.subscription);
+                    const formatLabel = item.type === 'audioBook' ? 'کتاب صوتی' : 'کتاب الکترونیکی';
+                    createBookstoreRow(detailsBookstoreList, 'طاقچه', formatLabel, priceText, `https://taaghche.com/book/${item.id}`, 'taaghche');
+                }
+            }
+
+            // Render Fidibo results
+            if (fidiboResults && fidiboResults.length > 0) {
+                // Filter matches
+                const matches = fidiboResults.filter(item => checkTitleMatch(cleanTitle, item.title));
+                for (const item of matches.slice(0, 2)) {
+                    matchesFound++;
+                    const priceText = await fetchFidiboPriceInfo(item.id);
+                    const formatLabel = item.content_type === 'audiobook' ? 'کتاب صوتی' : 'کتاب الکترونیکی';
+                    createBookstoreRow(detailsBookstoreList, 'فیدیبو', formatLabel, priceText, `https://fidibo.com/book/${item.id}`, 'fidibo');
+                }
+            }
+
+            if (matchesFound === 0) {
+                detailsBookstoreList.innerHTML = '<div style="font-size: 11px; text-align: center; color: var(--text-muted);">کتابی در طاقچه و فیدیبو یافت نشد.</div>';
+            }
+        } catch (error) {
+            console.error("Error in bookstore comparison:", error);
+            detailsBookstoreList.innerHTML = '<div style="font-size: 11px; text-align: center; color: #e63946;">خطا در دریافت اطلاعات فروشگاه‌ها.</div>';
+        }
+    }
+
+    function checkTitleMatch(original, target) {
+        if (!original || !target) return false;
+        const clean = str => str.toLowerCase().replace(/[\u200c\s\-\_\:\,\(\)]/g, '');
+        const cleanOrig = clean(original);
+        const cleanTarg = clean(target);
+        return cleanOrig.includes(cleanTarg) || cleanTarg.includes(cleanOrig);
+    }
+
+    async function searchTaaghcheAPI(query) {
+        try {
+            const response = await fetch(`https://explore.taaghche.com/v3/hint?term=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            if (data.suggestions) {
+                return data.suggestions
+                    .filter(s => s.data && s.data.id)
+                    .map(s => ({
+                        id: s.data.id,
+                        title: s.data.content || s.value,
+                        category: s.data.category,
+                        type: s.data.type,
+                        subscription: s.data.subscription
+                    }));
+            }
+        } catch (e) {
+            console.error("Taaghche API search error:", e);
+        }
+        return [];
+    }
+
+    async function searchFidiboAPI(query) {
+        try {
+            const response = await fetch(`https://api.fidibo.com/flex/search/suggestion?query=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            if (data.data && data.data.result) {
+                const suggestionResult = data.data.result.find(r => r.component === 'SEARCH_SUGGESTION');
+                if (suggestionResult && suggestionResult.items) {
+                    return suggestionResult.items.map(item => ({
+                        id: item.id,
+                        title: item.title.replace(/<\/?[^>]+(>|$)/g, ""),
+                        content_type: item.content_type,
+                        image: item.image,
+                        web_url: item.action?.web_url
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error("Fidibo API search error:", e);
+        }
+        return [];
+    }
+
+    async function fetchTaaghchePriceInfo(bookId, hasSubscription) {
+        let priceLabel = 'موجود برای خرید';
+        if (hasSubscription) {
+            priceLabel = 'مطالعه در طاقچه بی‌نهایت ♾️';
+        }
+        try {
+            const response = await fetch(`https://taaghche.com/book/${bookId}`);
+            const html = await response.text();
+            const priceMatch = html.match(/"price"\s*:\s*(\d+)/);
+            if (priceMatch && priceMatch[1]) {
+                const priceRials = parseInt(priceMatch[1]);
+                if (priceRials === 0) {
+                    return 'رایگان 🆓';
+                }
+                const priceTomans = Math.round(priceRials / 10);
+                return `${priceTomans.toLocaleString('fa-IR')} تومان` + (hasSubscription ? ' (یا بی‌نهایت ♾️)' : '');
+            }
+        } catch (e) {
+            console.error("Error fetching Taaghche price details:", e);
+        }
+        return priceLabel;
+    }
+
+    async function fetchFidiboPriceInfo(bookId) {
+        try {
+            const response = await fetch(`https://api.fidibo.com/flex/book/item/${bookId}`);
+            const data = await response.json();
+            if (data.data && data.data.result && data.data.result[0]) {
+                const bookInfo = data.data.result[0];
+                if (bookInfo.price !== undefined) {
+                    const priceRials = parseInt(bookInfo.price);
+                    if (priceRials === 0) return 'رایگان 🆓';
+                    const priceTomans = Math.round(priceRials / 10);
+                    return `${priceTomans.toLocaleString('fa-IR')} تومان`;
+                }
+            }
+        } catch (e) {
+            console.error("Error fetching Fidibo price details:", e);
+        }
+        return 'موجود برای خرید';
+    }
+
+    function createBookstoreRow(container, storeName, format, priceText, url, className) {
+        const item = document.createElement('div');
+        item.className = 'bookstore-item';
+        item.innerHTML = `
+            <div class="bookstore-item-info">
+                <div class="search-badge ${className}">${storeName}</div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span class="bookstore-name">${format}</span>
+                    <span class="bookstore-price">${priceText}</span>
+                </div>
+            </div>
+            <a href="${url}" target="_blank" class="bookstore-link-btn ${className}">
+                <span>مشاهده 🔗</span>
+            </a>
+        `;
+        container.appendChild(item);
     }
 
 
@@ -1098,9 +1457,243 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- 13. Initialization ---
+    // --- 15. Tab Switching Logic ---
+    const navItems = document.querySelectorAll('.nav-item');
+    const tabViews = document.querySelectorAll('.tab-view-container');
+    const pageTitleHeader = document.querySelector('.page-title h1');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.getAttribute('data-tab');
+            if (!targetTab) return; 
+            if (targetTab === 'settings') return; 
+
+            // Set active class
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            // Switch views
+            const isDashboardOrLibrary = targetTab === 'dashboard' || targetTab === 'library';
+            
+            tabViews.forEach(view => {
+                const viewId = `${targetTab}-view`;
+                if (view.id === viewId || (isDashboardOrLibrary && view.id === 'dashboard-view')) {
+                    view.classList.remove('hidden');
+                } else {
+                    view.classList.add('hidden');
+                }
+            });
+
+            // Update Header Title
+            if (pageTitleHeader) {
+                const titles = {
+                    dashboard: 'Dashboard',
+                    library: 'My Library',
+                    explore: 'Explore Community',
+                    wishlist: 'Wishlist',
+                    profile: 'User Profile'
+                };
+                pageTitleHeader.innerText = titles[targetTab] || 'MioBook';
+            }
+
+            if (targetTab === 'explore') {
+                loadCommunityFeed();
+            } else if (targetTab === 'profile') {
+                renderProfileView();
+            }
+        });
+    });
+
+    // --- 16. Google Authentication & Profile Rendering ---
+    const profileLoginBtn = document.getElementById('profile-login-btn');
+    const profileLogoutBtn = document.getElementById('profile-logout-btn');
+    const headerAvatar = document.querySelector('.profile-avatar');
+
+    if (profileLoginBtn) {
+        profileLoginBtn.addEventListener('click', async () => {
+            const errorMsg = document.getElementById('login-error-msg');
+            if (errorMsg) errorMsg.innerText = '';
+            
+            try {
+                profileLoginBtn.innerText = 'درحال اتصال...';
+                profileLoginBtn.disabled = true;
+                const auth = await loginWithGoogle();
+                profileLoginBtn.innerText = 'ورود با اکانت گوگل (Gmail)';
+                profileLoginBtn.disabled = false;
+                
+                renderProfileView();
+                alert(`خوش آمدید، ${auth.displayName}!`);
+            } catch (err) {
+                console.error("Login failed:", err);
+                if (profileLoginBtn) {
+                    profileLoginBtn.innerText = 'ورود با اکانت گوگل (Gmail)';
+                    profileLoginBtn.disabled = false;
+                }
+                if (errorMsg) {
+                    errorMsg.innerText = `خطا در ورود: ${err.message || 'مشکلی پیش آمد.'}`;
+                }
+            }
+        });
+    }
+
+    if (profileLogoutBtn) {
+        profileLogoutBtn.addEventListener('click', async () => {
+            if (confirm('آیا مایل به خروج از حساب کاربری خود هستید؟')) {
+                await logout();
+                renderProfileView();
+            }
+        });
+    }
+
+    if (headerAvatar) {
+        headerAvatar.addEventListener('click', () => {
+            const profileNav = document.getElementById('profile-nav-btn');
+            if (profileNav) profileNav.click();
+        });
+    }
+
+    async function renderProfileView() {
+        const data = await chrome.storage.local.get(['auth']);
+        const loggedIn = document.getElementById('profile-logged-in');
+        const loggedOut = document.getElementById('profile-logged-out');
+        const avatar = document.getElementById('profile-user-avatar');
+        const name = document.getElementById('profile-user-name');
+        const email = document.getElementById('profile-user-email');
+        
+        const hAvatarImg = document.querySelector('.profile-avatar img');
+        const hAvatarName = document.querySelector('.profile-avatar span');
+        
+        if (data.auth) {
+            if (loggedIn) loggedIn.classList.remove('hidden');
+            if (loggedOut) loggedOut.classList.add('hidden');
+            
+            if (avatar) avatar.src = data.auth.photoUrl;
+            if (name) name.innerText = data.auth.displayName;
+            if (email) email.innerText = data.auth.email;
+            
+            if (hAvatarImg) hAvatarImg.src = data.auth.photoUrl;
+            if (hAvatarName) hAvatarName.innerText = data.auth.displayName;
+        } else {
+            if (loggedIn) loggedIn.classList.add('hidden');
+            if (loggedOut) loggedOut.classList.remove('hidden');
+            
+            if (hAvatarImg) hAvatarImg.src = "https://robohash.org/guest?set=set4";
+            if (hAvatarName) hAvatarName.innerText = "میهمان 🐾";
+        }
+    }
+
+    // --- 17. Community Feed Loading & Rendering ---
+    const refreshCommunityBtn = document.getElementById('refresh-community-btn');
+    if (refreshCommunityBtn) {
+        refreshCommunityBtn.addEventListener('click', loadCommunityFeed);
+    }
+
+    async function loadCommunityFeed() {
+        const warningCard = document.getElementById('firebase-setup-warning');
+        const feedGrid = document.getElementById('social-feed-grid');
+        
+        if (!warningCard || !feedGrid) return;
+        
+        if (!isConfigured()) {
+            warningCard.classList.remove('hidden');
+            feedGrid.innerHTML = '';
+            return;
+        }
+        
+        warningCard.classList.add('hidden');
+        feedGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">میو! در حال بو کشیدن و پیدا کردن دوستان... 🐾</div>';
+        
+        try {
+            const feed = await fetchSocialStatuses();
+            feedGrid.innerHTML = '';
+            
+            if (feed.length === 0) {
+                feedGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">میو! هیچ فعالیت مطالعه‌ای در جامعه ثبت نشده است. اولین گربه‌ای باشید که کتابی را معرفی می‌کند! 🐈</div>';
+                return;
+            }
+            
+            feed.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass';
+                card.style.padding = '16px';
+                card.style.borderRadius = 'var(--radius-md)';
+                card.style.border = '1px solid var(--border-color)';
+                card.style.background = 'rgba(255, 255, 255, 0.01)';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.gap = '12px';
+                card.style.position = 'relative';
+                
+                const relativeTime = getRelativeTime(item.updatedAt);
+                const progressPct = item.totalPages > 0 ? Math.round((item.currentPage / item.totalPages) * 100) : 0;
+                
+                const liveBadgeHtml = item.isReadingNow 
+                    ? `<span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: bold; color: #00d2ff; background: rgba(0, 210, 255, 0.1); padding: 4px 8px; border-radius: 12px; animation: pulse 2s infinite;">
+                         <span style="width: 6px; height: 6px; border-radius: 50%; background: #00d2ff;"></span>
+                         در حال مطالعه (زنده)
+                       </span>`
+                    : '';
+                    
+                const statusLabels = {
+                    reading: 'در حال مطالعه',
+                    read: 'تمام کرده است 🎉',
+                    toRead: 'می‌خواهد بخواند'
+                };
+                
+                card.innerHTML = `
+                    ${liveBadgeHtml}
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <img src="${item.photoUrl}" alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: bold; font-size: 13px; color: var(--text-primary);">${escapeHtml(item.displayName)}</span>
+                            <span style="font-size: 10px; color: var(--text-muted);">${relativeTime}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 10px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.02); display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px;">📖</div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">${escapeHtml(item.bookTitle)}</span>
+                            <span style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(item.author || 'نویسنده نامشخص')}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary);">
+                            <span>وضعیت: ${statusLabels[item.status] || item.status}</span>
+                            <span>صفحه ${item.currentPage.toLocaleString('fa-IR')} از ${item.totalPages.toLocaleString('fa-IR')} (${progressPct.toLocaleString('fa-IR')}٪)</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; border-radius: 3px; background: var(--bg-tertiary); overflow: hidden; margin-top: 4px;">
+                            <div style="width: ${progressPct}%; height: 100%; background: ${item.status === 'read' ? '#2e6f40' : 'var(--accent-color)'}; border-radius: 3px;"></div>
+                        </div>
+                    </div>
+                `;
+                
+                feedGrid.appendChild(card);
+            });
+        } catch (err) {
+            console.error(err);
+            feedGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #e63946;">خطا در دریافت اطلاعات فید جامعه: ${err.message || 'اتصال برقرار نشد.'}</div>`;
+        }
+    }
+
+    function getRelativeTime(epoch) {
+        if (!epoch) return 'نامشخص';
+        const diffMs = Date.now() - epoch;
+        const diffMin = Math.round(diffMs / 60000);
+        const diffHr = Math.round(diffMs / 3600000);
+        const diffDay = Math.round(diffMs / 86400000);
+        
+        if (diffMin < 1) return 'همین الان';
+        if (diffMin < 60) return `${diffMin.toLocaleString('fa-IR')} دقیقه پیش`;
+        if (diffHr < 24) return `${diffHr.toLocaleString('fa-IR')} ساعت پیش`;
+        return `${diffDay.toLocaleString('fa-IR')} روز پیش`;
+    }
+
+    // --- 18. Initialization ---
     loadBookshelf();
     loadGoals();
     loadWordBank();
     renderCharts();
+    renderProfileView();
 });

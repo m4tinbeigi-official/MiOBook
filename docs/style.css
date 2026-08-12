@@ -317,6 +317,53 @@ main {
     color: var(--text-secondary);
 }
 
+/* Reviews Section */
+.reviews-section {
+    padding-bottom: 100px;
+}
+
+.reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.review-card {
+    padding: 30px;
+    text-align: right;
+    transition: transform 0.3s ease;
+    border-top: 2px solid rgba(168, 85, 247, 0.2);
+}
+
+.review-card:hover {
+    box-shadow: 0 10px 20px rgba(168, 85, 247, 0.2);
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.avatar {
+    font-size: 2.5rem;
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+}
+
+.review-header h4 {
+    margin-bottom: 5px;
+    color: white;
+}
+
+.stars {
+    font-size: 0.9rem;
+}
+
 /* Footer */
 footer {
     text-align: center;

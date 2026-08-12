@@ -599,30 +599,201 @@ body {
 /* Search results in header */
 .search-results {
     position: absolute;
-    top: 70px;
-    right: 48px;
-    width: 312px;
+    top: 55px;
+    right: 0;
+    width: 380px;
     background: #1A1F2C;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-glass);
-    max-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
-    z-index: 50;
+    z-index: 100;
     display: flex;
     flex-direction: column;
 }
 
 .search-result-item {
-    padding: 12px 16px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
 }
 
 .search-result-item:hover {
     background: var(--bg-card-hover);
+}
+
+.search-result-cover {
+    width: 36px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.05);
+    flex-shrink: 0;
+}
+
+.search-result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-grow: 1;
+    min-width: 0;
+    text-align: right;
+    direction: rtl;
+}
+
+.search-result-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-author {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.search-badge {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: bold;
+    color: white;
+    display: inline-block;
+}
+
+.search-badge.taaghche {
+    background-color: #00b1a0;
+}
+
+.search-badge.fidibo {
+    background-color: #00adc9;
+}
+
+.search-badge.openlibrary {
+    background-color: #6c757d;
+}
+
+.select-search-btn {
+    padding: 4px 10px;
+    font-size: 10px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+/* Bookstore Comparison in Details Modal */
+.bookstore-comparison-section {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-color);
+    direction: rtl;
+    text-align: right;
+}
+
+.bookstore-comparison-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bookstore-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bookstore-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.01);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.bookstore-item-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bookstore-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bookstore-status {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.bookstore-price {
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.bookstore-link-btn {
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.bookstore-link-btn.taaghche {
+    background: rgba(0, 177, 160, 0.1);
+    color: #00b1a0;
+    border: 1px solid rgba(0, 177, 160, 0.2);
+}
+
+.bookstore-link-btn.taaghche:hover {
+    background: rgba(0, 177, 160, 0.2);
+}
+
+.bookstore-link-btn.fidibo {
+    background: rgba(0, 173, 201, 0.1);
+    color: #00adc9;
+    border: 1px solid rgba(0, 173, 201, 0.2);
+}
+
+.bookstore-link-btn.fidibo:hover {
+    background: rgba(0, 173, 201, 0.2);
+}
+
+.bookstore-link-btn.not-available {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    pointer-events: none;
 }
 
 /* Book Details Modal styling override */
@@ -652,4 +823,102 @@ body {
     height: 100%;
     background: var(--accent-secondary);
     border-radius: 10px;
+}
+
+/* Social Features & Tab Views styles */
+.tab-view-container {
+    width: 100%;
+    animation: fadeIn var(--transition-normal);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#social-reading-controls {
+    transition: var(--transition-fast);
+}
+
+.firebase-warning-card h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.profile-card-container {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-glass);
+}
+
+/* ========================================= */
+/* 🐾 CAT THEME (فاز گربه) EXTENSIONS 🐾 */
+/* ========================================= */
+
+/* Cat Ears on Book Covers */
+.bc-cover, .rc-cover {
+    position: relative;
+}
+
+.bc-cover::before, .bc-cover::after,
+.rc-cover::before, .rc-cover::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 12px solid var(--accent-color);
+    z-index: -1;
+    opacity: 0.8;
+    transition: transform 0.3s ease;
+}
+
+.bc-cover::before, .rc-cover::before {
+    left: 10%;
+    transform: rotate(-15deg);
+}
+
+.bc-cover::after, .rc-cover::after {
+    right: 10%;
+    transform: rotate(15deg);
+}
+
+.book-card:hover .bc-cover::before,
+.reading-card:hover .rc-cover::before {
+    transform: rotate(-25deg) translateY(-2px);
+}
+
+.book-card:hover .bc-cover::after,
+.reading-card:hover .rc-cover::after {
+    transform: rotate(25deg) translateY(-2px);
+}
+
+/* Cat Tail Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--accent-color), var(--accent-secondary));
+    border-radius: 20px;
+    border: 3px solid var(--bg-main);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #9d6dfc, #33dfff);
+}
+
+/* Small paw prints for buttons */
+.btn-primary:active, .filter-btn:active {
+    transform: scale(0.95);
 }

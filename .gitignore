@@ -1,0 +1,18 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Database files
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Temp
+*.log
