@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>میو بوک | پنل جانبی</title>
+    <link rel="stylesheet" href="../styles/shared.css">
+    <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body class="glass">
+    <!-- Header -->
+    <header class="header">
+        <div class="logo-area">
+            <img src="../assets/icons/icon-48.png" alt="MioBook Logo" class="logo">
+            <div class="brand">
+                <h1>میو بوک</h1>
+                <p>دستیار خواندن شما</p>
+            </div>
+        </div>
+        <div class="actions-area">
+            <!-- Theme Toggle Select -->
+            <button id="theme-btn" class="icon-btn clickable" title="تغییر تم">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+            <button id="dashboard-btn" class="icon-btn clickable" title="بازکردن داشبورد">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M21 9H3"/><path d="M21 15H3"/><path d="M12 3v18"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="tabs-nav">
+        <button class="tab-link active clickable" data-tab="tab-marker" title="قلم نشانگر">✏️</button>
+        <button class="tab-link clickable" data-tab="tab-focus" title="زمان‌سنج تمرکز">⏱️</button>
+        <button class="tab-link clickable" data-tab="tab-epub" title="کتاب‌ساز">📖</button>
+        <button class="tab-link clickable" data-tab="tab-words" title="جعبه لغات">📝</button>
+        <button class="tab-link clickable" data-tab="tab-sound" title="صدای محیطی">🎵</button>
+    </nav>
+
+    <!-- Content Sections -->
+    <main class="content-container">
+        <!-- Tab 1: MioBook Marker -->
+        <section id="tab-marker" class="tab-content active animate-fade-in">
+            <div class="section-title">
+                <h2>هایلایت‌ها و یادداشت‌های این صفحه</h2>
+            </div>
+            
+            <div class="highlight-controls">
+                <div class="color-picker-label">رنگ نشانگر فعلی:</div>
+                <div class="color-selector">
+                    <button class="color-dot yellow active clickable" data-color="yellow" title="زرد"></button>
+                    <button class="color-dot green clickable" data-color="green" title="سبز"></button>
+                    <button class="color-dot blue clickable" data-color="blue" title="آبی"></button>
+                    <button class="color-dot pink clickable" data-color="pink" title="صورتی"></button>
+                </div>
+            </div>
+
+            <div class="empty-state" id="marker-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.886H3.886L8.743 12.5 6.83 18.386 12 14.773l5.17 3.613-1.913-5.886 4.857-3.614h-6.202L12 3Z"/></svg>
+                <p>در این صفحه هنوز هایلایتی ثبت نشده است.</p>
+                <span class="instruction-text">متنی را در صفحه وب انتخاب کنید تا منوی هایلایت ظاهر شود.</span>
+            </div>
+
+            <div class="highlights-list hidden" id="highlights-list">
+                <!-- Highlights will load here dynamically -->
+            </div>
+            
+            <div class="export-actions hidden" id="marker-exports">
+                <button class="btn-secondary clickable" id="export-markdown-btn">
+                    <span>خروجی Markdown</span>
+                </button>
+                <button class="btn-secondary clickable" id="export-json-btn">
+                    <span>خروجی JSON</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Tab 2: MioBook Focus -->
+        <section id="tab-focus" class="tab-content animate-fade-in">
+            <div class="section-title">
+                <h2>زمان‌سنج مطالعه و تمرکز</h2>
+            </div>
+            
+            <div class="timer-box glass">
+                <div class="timer-display" id="timer-time">۲۵:۰۰</div>
+                <div class="timer-state" id="timer-state-label">زمان مطالعه</div>
+                
+                <div class="timer-controls">
+                    <button class="btn-primary clickable" id="timer-start-btn">شروع مطالعه</button>
+                    <button class="btn-secondary clickable hidden" id="timer-pause-btn">توقف موقت</button>
+                    <button class="btn-secondary clickable" id="timer-reset-btn">راه‌اندازی مجدد</button>
+                </div>
+            </div>
+
+            <div class="reading-stats-widget">
+                <h3>آمار خواندن صفحه فعلی</h3>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <span class="stat-val" id="wpm-est-time">-</span>
+                        <span class="stat-lbl">زمان تقریبی مطالعه</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-val" id="wpm-word-count">-</span>
+                        <span class="stat-lbl">تعداد کلمات صفحه</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: MioBook Epubify -->
+        <section id="tab-epub" class="tab-content animate-fade-in">
+            <div class="section-title">
+                <h2>کتاب‌ساز و حالت خواندن</h2>
+            </div>
+            
+            <div class="action-card">
+                <div class="card-body">
+                    <h3>حالت خواندن بدون حواس‌پرتی</h3>
+                    <p>نمایش این صفحه در یک حالت تمیز و بهینه‌سازی‌شده برای مطالعه با تایپوگرافی زیبا.</p>
+                </div>
+                <button class="btn-primary clickable w-100" id="trigger-reader-btn">فعال‌سازی حالت مطالعه</button>
+            </div>
+
+            <div class="action-card mt-3">
+                <div class="card-body">
+                    <h3>تولید کتاب الکترونیکی EPUB</h3>
+                    <p>فصل‌های این سایت را به یک کتاب الکترونیکی یکپارچه تبدیل و دانلود کنید.</p>
+                </div>
+                <button class="btn-secondary clickable w-100" id="generate-epub-btn">دانلود به صورت فایل EPUB</button>
+            </div>
+        </section>
+
+        <!-- Tab 4: Word Bank -->
+        <section id="tab-words" class="tab-content animate-fade-in">
+            <div class="section-title">
+                <h2>جعبه لغات شخصی</h2>
+            </div>
+
+            <div class="word-add-form">
+                <input type="text" id="word-input" class="word-text-input" placeholder="کلمه یا اصطلاح جدید...">
+                <input type="text" id="word-meaning-input" class="word-text-input" placeholder="معنی یا توضیح..." style="margin-top:8px;">
+                <button class="btn-primary clickable w-100" id="save-word-btn" style="margin-top:8px;">افزودن به جعبه لغات</button>
+            </div>
+
+            <div class="empty-state" id="words-empty">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+                <p>هنوز لغتی ذخیره نشده است.</p>
+                <span class="instruction-text">کلمات ناآشنا را برای مرور بعدی اینجا ذخیره کنید.</span>
+            </div>
+
+            <div class="words-list hidden" id="words-list"></div>
+
+            <button class="btn-secondary clickable w-100 hidden" id="export-words-btn" style="margin-top:12px;">خروجی CSV لغات</button>
+        </section>
+
+        <!-- Tab 5: Ambient Sounds -->
+        <section id="tab-sound" class="tab-content animate-fade-in">
+            <div class="section-title">
+                <h2>صدای محیطی تمرکز</h2>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">صداهای آرامش‌بخش برای تمرکز بهتر هنگام مطالعه — کاملاً آفلاین و سنتز شده توسط مرورگر</p>
+
+            <div class="sound-grid">
+                <button class="sound-btn clickable" id="sound-brown" data-sound="brown">
+                    <span class="sound-icon">🌊</span>
+                    <span class="sound-name">نویز قهوه‌ای</span>
+                    <span class="sound-desc">تمرکز عمیق</span>
+                </button>
+                <button class="sound-btn clickable" id="sound-rain" data-sound="rain">
+                    <span class="sound-icon">🌧️</span>
+                    <span class="sound-name">باران</span>
+                    <span class="sound-desc">آرامش خاطر</span>
+                </button>
+                <button class="sound-btn clickable" id="sound-forest" data-sound="forest">
+                    <span class="sound-icon">🌿</span>
+                    <span class="sound-name">جنگل</span>
+                    <span class="sound-desc">طبیعت آرام</span>
+                </button>
+                <button class="sound-btn clickable" id="sound-cafe" data-sound="cafe">
+                    <span class="sound-icon">☕</span>
+                    <span class="sound-name">کافه</span>
+                    <span class="sound-desc">انرژی ملایم</span>
+                </button>
+            </div>
+
+            <div class="volume-control">
+                <label for="sound-volume">🔊 صدا</label>
+                <input type="range" id="sound-volume" min="0" max="100" value="40" class="volume-slider">
+                <span id="volume-label">۴۰٪</span>
+            </div>
+
+            <div class="sound-status" id="sound-status">⏸ هیچ صدایی در حال پخش نیست</div>
+        </section>
+    </main>
+
+    <!-- Core Javascript files -->
+    <script src="../scripts/ambient.js"></script>
+    <script src="sidepanel.js"></script>
+    <script src="sidepanel_phase6.js"></script>
+</body>
+</html>

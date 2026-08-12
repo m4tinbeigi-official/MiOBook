@@ -1,0 +1,290 @@
+/* Shared Stylesheet & Design Tokens for MioBook (RTL & Farsi) */
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../assets/fonts/Vazirmatn-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../assets/fonts/Vazirmatn-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../assets/fonts/Vazirmatn-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    /* Font family */
+    --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    
+    /* Animation transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Border Rad */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-round: 50%;
+}
+
+/* Light Theme Variables */
+:root, [data-theme="light"] {
+    --bg-primary: #fcfbfa;
+    --bg-secondary: #f4f2ee;
+    --bg-tertiary: #eae7e1;
+    --bg-glass: rgba(252, 251, 250, 0.75);
+    
+    --text-primary: #1e1e1c;
+    --text-secondary: #5c5c58;
+    --text-muted: #8e8d88;
+    
+    --accent-color: #8b5a2b; /* Bookish warm brown */
+    --accent-light: #f3e9dc;
+    --accent-hover: #704721;
+    
+    --border-color: rgba(0, 0, 0, 0.08);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.08);
+    
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --glass-shadow: 0 8px 32px 0 rgba(139, 90, 43, 0.04);
+    
+    --highlight-yellow: rgba(255, 223, 100, 0.65);
+    --highlight-green: rgba(170, 240, 190, 0.65);
+    --highlight-blue: rgba(160, 210, 255, 0.65);
+    --highlight-pink: rgba(255, 185, 210, 0.65);
+}
+
+/* Dark Theme (Obsidian Library) */
+[data-theme="dark"] {
+    --bg-primary: #121214;
+    --bg-secondary: #1a1a1e;
+    --bg-tertiary: #242429;
+    --bg-glass: rgba(18, 18, 20, 0.75);
+    
+    --text-primary: #f0f0f5;
+    --text-secondary: #a0a0aa;
+    --text-muted: #6b6b75;
+    
+    --accent-color: #d4a373; /* Light gold/sand */
+    --accent-light: #2d241c;
+    --accent-hover: #e6b88a;
+    
+    --border-color: rgba(255, 255, 255, 0.08);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.4);
+    
+    --glass-border: rgba(255, 255, 255, 0.04);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    
+    --highlight-yellow: rgba(230, 180, 0, 0.35);
+    --highlight-green: rgba(40, 180, 100, 0.35);
+    --highlight-blue: rgba(40, 120, 220, 0.35);
+    --highlight-pink: rgba(200, 60, 120, 0.35);
+}
+
+/* Sepia Theme (Classic Paperback) */
+[data-theme="sepia"] {
+    --bg-primary: #f4ecd8;
+    --bg-secondary: #ebdcb9;
+    --bg-tertiary: #dfcc9d;
+    --bg-glass: rgba(244, 236, 216, 0.75);
+    
+    --text-primary: #433422;
+    --text-secondary: #6b563f;
+    --text-muted: #96816a;
+    
+    --accent-color: #8c2d19; /* Brick Red */
+    --accent-light: #ecd6cb;
+    --accent-hover: #6e2010;
+    
+    --border-color: rgba(67, 52, 34, 0.1);
+    --shadow-sm: 0 2px 8px rgba(67, 52, 34, 0.04);
+    --shadow-md: 0 8px 24px rgba(67, 52, 34, 0.07);
+    --shadow-lg: 0 16px 40px rgba(67, 52, 34, 0.1);
+    
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-shadow: 0 8px 32px 0 rgba(140, 45, 25, 0.04);
+    
+    --highlight-yellow: rgba(245, 200, 50, 0.5);
+    --highlight-green: rgba(130, 210, 140, 0.5);
+    --highlight-blue: rgba(140, 190, 230, 0.5);
+    --highlight-pink: rgba(230, 150, 170, 0.5);
+}
+
+/* Moss/Forest Theme (Eyesight Relax) */
+[data-theme="moss"] {
+    --bg-primary: #ebf0eb;
+    --bg-secondary: #dae3da;
+    --bg-tertiary: #c8d4c8;
+    --bg-glass: rgba(235, 240, 235, 0.75);
+    
+    --text-primary: #223c22;
+    --text-secondary: #405d40;
+    --text-muted: #6e846e;
+    
+    --accent-color: #2e6f40; /* Forest Green */
+    --accent-light: #d6ebd9;
+    --accent-hover: #1e4b2a;
+    
+    --border-color: rgba(34, 60, 34, 0.1);
+    --shadow-sm: 0 2px 8px rgba(34, 60, 34, 0.04);
+    --shadow-md: 0 8px 24px rgba(34, 60, 34, 0.07);
+    --shadow-lg: 0 16px 40px rgba(34, 60, 34, 0.1);
+    
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-shadow: 0 8px 32px 0 rgba(46, 111, 64, 0.04);
+    
+    --highlight-yellow: rgba(235, 205, 70, 0.45);
+    --highlight-green: rgba(90, 190, 110, 0.45);
+    --highlight-blue: rgba(110, 170, 210, 0.45);
+    --highlight-pink: rgba(220, 130, 150, 0.45);
+}
+
+/* Reset and Globals */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    direction: rtl;
+    text-align: right;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+    overflow-x: hidden;
+}
+
+/* Standard Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* UI Helpers */
+.glass {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.clickable {
+    cursor: pointer;
+    transition: transform var(--transition-fast), background-color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.clickable:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    color: var(--bg-primary);
+    border: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+    box-shadow: 0 4px 12px rgba(139, 90, 43, 0.15);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--text-muted);
+}
+
+.btn-secondary:active {
+    transform: scale(0.98);
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        transform: translateY(12px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.animate-slide-in {
+    animation: slideIn var(--transition-normal) forwards;
+}
+
+.animate-fade-in {
+    animation: fadeIn var(--transition-normal) forwards;
+}

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>میو بوک | داشبورد مطالعه</title>
+    <link rel="stylesheet" href="../styles/shared.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body data-theme="dark">
+    <div class="dashboard-wrapper">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <nav class="sidebar glass-sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+                    </svg>
+                </div>
+                <h2>میو بوک</h2>
+            </div>
+            
+            <ul class="nav-links">
+                <li class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path></svg>
+                    <span>My Library</span>
+                </li>
+                <li class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span>Explore</span>
+                </li>
+                <li class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    <span>Wishlist</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-spacer"></div>
+
+            <ul class="nav-links">
+                <li class="nav-item" id="theme-toggle-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Settings</span>
+                </li>
+                <li class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span>Profile</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            
+            <header class="top-header">
+                <div class="page-title">
+                    <h1>Dashboard</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="search-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="book-search-input" placeholder="Search book or author...">
+                        <div class="search-results hidden" id="search-results-list"></div>
+                        <button id="book-search-btn" class="hidden">جستجو</button>
+                    </div>
+                    <div class="profile-avatar">
+                        <img src="https://ui-avatars.com/api/?name=Olivia+M&background=random" alt="Profile">
+                        <span>Olivia M.</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-scroll-area">
+                
+                <!-- Currently Reading Section -->
+                <section class="dashboard-section currently-reading-section hidden" id="currently-reading-section">
+                    <div class="section-header">
+                        <h2>Currently Reading</h2>
+                    </div>
+                    <div class="reading-cards-container" id="currently-reading-container">
+                        <!-- Dynamic reading cards injected here -->
+                    </div>
+                </section>
+
+                <!-- My Library Section -->
+                <section class="dashboard-section my-library-section">
+                    <div class="section-header">
+                        <h2>My Library</h2>
+                        <a href="#" class="see-all-link">See all</a>
+                    </div>
+                    
+                    <div class="shelf-filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="reading">Reading</button>
+                        <button class="filter-btn" data-filter="read">Completed</button>
+                        <button class="filter-btn" data-filter="toRead">To Read</button>
+                        <button class="btn-primary clickable add-manual-btn" id="add-book-btn">
+                            + Add Book
+                        </button>
+                    </div>
+
+                    <div class="library-grid" id="bookshelf-container">
+                        <!-- Dynamic book grid injected here -->
+                    </div>
+                    
+                    <div class="empty-state hidden" id="shelf-empty">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
+                        <p>No books in your library yet.</p>
+                    </div>
+                </section>
+                
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Adding Manual Book -->
+    <div class="modal hidden" id="add-book-modal">
+        <div class="modal-content glass animate-slide-in">
+            <div class="modal-header">
+                <h3>ثبت کتاب جدید به صورت دستی</h3>
+                <button class="close-modal-btn clickable" id="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="manual-book-form" id="manual-book-form">
+                    <div class="form-group">
+                        <label for="book-title">عنوان کتاب *</label>
+                        <input type="text" id="book-title" required placeholder="مثال: شاهنامه فردوسی">
+                    </div>
+                    <div class="form-group">
+                        <label for="book-author">نویسنده / مترجم</label>
+                        <input type="text" id="book-author" placeholder="مثال: ابوالقاسم فردوسی">
+                    </div>
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="book-pages">تعداد کل صفحات</label>
+                            <input type="number" id="book-pages" min="1" placeholder="مثال: ۶۰۰">
+                        </div>
+                        <div class="form-group">
+                            <label for="book-status">وضعیت مطالعه</label>
+                            <select id="book-status">
+                                <option value="toRead">می‌خواهم بخوانم</option>
+                                <option value="reading">در حال مطالعه</option>
+                                <option value="read">خوانده شده</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary clickable w-100">ثبت و ذخیره در کتابخانه</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Book Details & Progress Update -->
+    <div class="modal hidden" id="book-details-modal">
+        <div class="modal-content glass animate-slide-in">
+            <div class="modal-header">
+                <h3 id="details-book-title">عنوان کتاب</h3>
+                <button class="close-modal-btn clickable" id="close-details-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="book-details-card">
+                    <div class="bd-cover-container" id="details-book-cover">
+                        <!-- Cover image or placeholder -->
+                    </div>
+                    <div class="bd-info">
+                        <h4 id="details-book-author">نویسنده</h4>
+                        <div class="bd-status-badge" id="details-book-status">در حال مطالعه</div>
+                        <div class="bd-progress-bar-wrapper">
+                            <div class="bd-progress-info">
+                                <span>میزان پیشرفت</span>
+                                <strong id="details-progress-pct">۰٪</strong>
+                            </div>
+                            <div class="bd-progress-bg">
+                                <div class="bd-progress-fill" id="details-progress-fill" style="width: 0%;"></div>
+                            </div>
+                            <div class="bd-progress-pages" id="details-progress-pages">صفحه ۰ از ۰</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider">به‌روزرسانی پیشرفت مطالعه</div>
+                
+                <div class="progress-update-form">
+                    <div class="form-group">
+                        <label for="update-current-page">اکنون در کدام صفحه هستید؟</label>
+                        <div class="form-group-row">
+                            <input type="number" id="update-current-page" min="0" placeholder="صفحه...">
+                            <button class="btn-primary" id="save-progress-btn">ذخیره تغییرات</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer-danger">
+                    <button class="btn-danger w-100" id="details-delete-book-btn">🗑️ حذف این کتاب از کتابخانه</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden placeholders to prevent JS errors for removed widgets -->
+    <div id="clock-time" class="hidden"></div>
+    <div id="clock-date" class="hidden"></div>
+    <div id="greeting-text" class="hidden"></div>
+    <div id="goals-setup-card" class="hidden"></div>
+    <div id="goals-progress-area" class="hidden"></div>
+    <div id="weekly-chart-area" class="hidden"></div>
+    <div id="dist-chart-area" class="hidden"></div>
+    <div id="monthly-chart" class="hidden"></div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

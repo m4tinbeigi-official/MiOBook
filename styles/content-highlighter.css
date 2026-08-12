@@ -1,0 +1,350 @@
+/* Content Script Styles for MioBook Highlighter */
+
+/* Highlighter spans on the web page */
+.miobook-highlight {
+    color: inherit !important;
+    border-radius: 2px !important;
+    padding: 1px 0 !important;
+    transition: background-color 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.miobook-highlight-yellow { background-color: rgba(255, 223, 100, 0.65) !important; }
+.miobook-highlight-green  { background-color: rgba(170, 240, 190, 0.65) !important; }
+.miobook-highlight-blue   { background-color: rgba(160, 210, 255, 0.65) !important; }
+.miobook-highlight-pink   { background-color: rgba(255, 185, 210, 0.65) !important; }
+
+/* Dark mode overrides (if the webpage itself is dark, we make them slightly transparent or glowing) */
+@media (prefers-color-scheme: dark) {
+    .miobook-highlight-yellow { background-color: rgba(230, 180, 0, 0.4) !important; }
+    .miobook-highlight-green  { background-color: rgba(40, 180, 100, 0.4) !important; }
+    .miobook-highlight-blue   { background-color: rgba(40, 120, 220, 0.4) !important; }
+    .miobook-highlight-pink   { background-color: rgba(200, 60, 120, 0.4) !important; }
+}
+
+/* Floating Action Menu */
+.miobook-floating-menu {
+    position: absolute;
+    z-index: 2147483647; /* Maximum possible z-index */
+    background: rgba(30, 30, 32, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    direction: rtl;
+    animation: miobook-bounceIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    pointer-events: auto;
+}
+
+.miobook-color-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    padding: 0;
+}
+
+.miobook-color-btn:hover {
+    transform: scale(1.2);
+}
+
+.miobook-color-btn.active {
+    border-color: #ffffff;
+}
+
+.miobook-color-btn.yellow { background-color: rgb(255, 223, 100); }
+.miobook-color-btn.green  { background-color: rgb(170, 240, 190); }
+.miobook-color-btn.blue   { background-color: rgb(160, 210, 255); }
+.miobook-color-btn.pink   { background-color: rgb(255, 185, 210); }
+
+.miobook-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.miobook-action-btn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+}
+
+.miobook-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.miobook-action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Tooltip for highlights with notes */
+.miobook-highlight-tooltip {
+    position: absolute;
+    z-index: 2147483646;
+    background: #1e1e20;
+    color: #f0f0f5;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 250px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    direction: rtl;
+    text-align: right;
+    pointer-events: none;
+    animation: miobook-fadeIn 0.2s ease forwards;
+}
+
+/* Animations */
+@keyframes miobook-bounceIn {
+    0% {
+        opacity: 0;
+        transform: translateY(5px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes miobook-fadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- MioBook Book Integration UI --- */
+.miobook-floating-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2147483647;
+    background: linear-gradient(135deg, #2e6f40, #1b532b);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(46, 111, 64, 0.35);
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    direction: rtl;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.miobook-floating-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px rgba(46, 111, 64, 0.45);
+    background: linear-gradient(135deg, #37824c, #1f5e31);
+}
+
+.miobook-floating-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+}
+
+/* Dropdown/Popup for options */
+.miobook-floating-popup {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    z-index: 2147483647;
+    width: 220px;
+    background: rgba(30, 30, 32, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    direction: rtl;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: miobook-bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.miobook-popup-header {
+    padding: 6px 12px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 6px;
+}
+
+.miobook-popup-item {
+    background: transparent;
+    border: none;
+    color: #f5f5f7;
+    text-align: right;
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.miobook-popup-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.miobook-popup-item.active {
+    background: rgba(46, 111, 64, 0.2);
+    color: #58d68d;
+    font-weight: 500;
+}
+
+/* Success Toast */
+.miobook-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    z-index: 2147483647;
+    background: rgba(25, 25, 27, 0.95);
+    border: 1px solid rgba(46, 111, 64, 0.4);
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: #ffffff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    direction: rtl;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.miobook-toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.miobook-toast-icon {
+    color: #2e6f40;
+    font-size: 18px;
+}
+
+/* Library Banner */
+.miobook-library-banner {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 999999;
+    background: linear-gradient(135deg, rgba(20, 24, 21, 0.95), rgba(12, 14, 13, 0.95));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 2px solid #2e6f40;
+    color: #ffffff;
+    padding: 14px 24px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    direction: rtl;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: miobook-slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.miobook-banner-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.miobook-banner-logo {
+    width: 32px;
+    height: 32px;
+    background: #2e6f40;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(46, 111, 64, 0.3);
+}
+
+.miobook-banner-title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.miobook-banner-desc {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-right: 12px;
+}
+
+.miobook-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.miobook-banner-btn {
+    background: #2e6f40;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.miobook-banner-btn:hover {
+    background: #37824c;
+    transform: scale(1.02);
+}
+
+.miobook-banner-close {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.miobook-banner-close:hover {
+    color: #ffffff;
+}
+
+@keyframes miobook-slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
