@@ -2,7 +2,7 @@
 
 // Set this to true to bypass Firebase and use the Node.js Express server
 const USE_CUSTOM_SERVER = true; 
-const CUSTOM_SERVER_URL = "http://localhost:5000"; // Replace with your production server URL when deployed
+const CUSTOM_SERVER_URL = "https://miobook-m4tinbeigiis-projects.vercel.app"; // Production server URL (Vercel)
 
 const FIREBASE_CONFIG = {
   apiKey: "YOUR_FIREBASE_API_KEY",
