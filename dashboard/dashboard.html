@@ -14,12 +14,7 @@
         <!-- SIDEBAR NAVIGATION -->
         <nav class="sidebar glass-sidebar">
             <div class="sidebar-logo">
-                <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
-                    </svg>
-                </div>
-                <h2>میو بوک</h2>
+                <img src="../assets/icons/logo-white.png" alt="میو بوک" class="logo-img">
             </div>
             
             <ul class="nav-links">
@@ -39,9 +34,29 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                     <span data-i18n="nav.wishlist">لیست علاقه‌مندی‌ها 🐾</span>
                 </li>
+                <li class="nav-item" data-tab="explore">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                    <span data-i18n="nav.now">اکنون 🐾</span>
+                </li>
                 <li class="nav-item" data-tab="tools">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
                     <span data-i18n="nav.tools">ابزارهای مطالعه 🐾</span>
+                </li>
+                <li class="nav-item" data-tab="tools">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    <span data-i18n="nav.notes">یادداشت‌ها 🐾</span>
+                </li>
+                <li class="nav-item" data-tab="tools">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3-4 6-4 9 0"></path><path d="M3 12c3-4 6-4 9 0"></path><path d="M12 21c3-4 6-4 9 0"></path><path d="M12 12c3-4 6-4 9 0"></path></svg>
+                    <span data-i18n="nav.quotes">نقل قول‌ها 🐾</span>
+                </li>
+                <li class="nav-item" data-tab="tools">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    <span data-i18n="nav.stats">آمار و گزارش 🐾</span>
+                </li>
+                <li class="nav-item" data-tab="explore">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span data-i18n="nav.friends">دوستان 🐾</span>
                 </li>
             </ul>
 
@@ -57,6 +72,16 @@
                     <span data-i18n="nav.profile">پروفایل 🐾</span>
                 </li>
             </ul>
+
+            <div class="sidebar-mascot">
+                <div class="mascot-scene">
+                    <span class="mascot-lamp-glow"></span>
+                    <span class="mascot-cat">🐈‍⬛</span>
+                    <span class="mascot-book">📖</span>
+                    <span class="mascot-beanbag"></span>
+                </div>
+                <p class="mascot-tagline">هر صفحه، یک سفر؛<br>هر کتاب، یک ماجراجویی</p>
+            </div>
         </nav>
 
         <!-- MAIN CONTENT AREA -->
@@ -67,9 +92,17 @@
                     <h1 data-i18n="dash.title">داشبورد</h1>
                 </div>
                 <div class="header-actions">
+                    <button class="icon-btn clickable" id="notif-bell-btn" title="اعلان‌ها">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span class="icon-badge" id="notif-badge">۳</span>
+                    </button>
+                    <button class="icon-btn clickable" id="mode-toggle-btn" title="حالت روشن/تاریک">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    </button>
                     <div class="search-box">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" id="book-search-input" data-i18n-placeholder="dash.searchPlaceholder" placeholder="جستجوی کتاب یا نویسنده...">
+                        <input type="text" id="book-search-input" data-i18n-placeholder="dash.searchPlaceholder" placeholder="جستجوی کتاب، یادداشت، یا کاربر...">
+                        <span class="search-kbd">Ctrl+K</span>
                         <div class="search-results hidden" id="search-results-list"></div>
                         <button id="book-search-btn" class="hidden">جستجو</button>
                     </div>
@@ -93,6 +126,52 @@
                             <div id="clock-date" style="font-size: 11px; color: var(--text-secondary);"></div>
                         </div>
                     </section>
+
+                    <!-- Hero: Currently Reading (mock illustration card) -->
+                    <section class="hero-reading-card glass" id="hero-reading-card">
+                        <div class="hero-scene">
+                            <span class="hero-moon">🌙</span>
+                            <span class="hero-stars">✨</span>
+                            <span class="hero-cat">🐈‍⬛</span>
+                            <span class="hero-cushion"></span>
+                        </div>
+                        <div class="hero-info">
+                            <span class="hero-label">در حال حاضر می‌خوانی</span>
+                            <h2 class="hero-title" id="hero-book-title">عادت‌های اتمی</h2>
+                            <p class="hero-author" id="hero-book-author">جیمز کلیر</p>
+                            <div class="hero-progress-bar">
+                                <div class="hero-progress-fill" id="hero-progress-fill" style="width: 56%;"></div>
+                            </div>
+                            <div class="hero-progress-text">
+                                <span id="hero-progress-pct">۵۶٪</span>
+                                <span id="hero-progress-pages">صفحه ۱۴۳ از ۲۵۵</span>
+                            </div>
+                            <div class="hero-chips">
+                                <div class="hero-chip"><span class="hero-chip-label">شروع مطالعه</span><span class="hero-chip-value">۲۱ مرداد</span></div>
+                                <div class="hero-chip"><span class="hero-chip-label">زمان مطالعه</span><span class="hero-chip-value">۱۴ ساعت</span></div>
+                                <div class="hero-chip"><span class="hero-chip-label">هدف</span><span class="hero-chip-value">تا پایان شهریور</span></div>
+                                <button class="hero-chip hero-chip-btn clickable" id="hero-quick-note-btn"><span class="hero-chip-label">📝</span><span class="hero-chip-value">یادداشت سریع</span></button>
+                            </div>
+                        </div>
+                        <div class="hero-cover" id="hero-book-cover" style="background-image: linear-gradient(135deg, #593563, #7d4d8a);"></div>
+                    </section>
+
+                    <!-- Friends reading now + Quick composer -->
+                    <div class="dashboard-two-col">
+                        <section class="dashboard-section glass friends-now-section">
+                            <div class="section-header">
+                                <h2>اکنون در حال مطالعه</h2>
+                            </div>
+                            <div class="friends-now-row" id="friends-now-row"><!-- MOCK_FRIENDS_READING rendered here --></div>
+                        </section>
+                        <section class="dashboard-section glass quick-note-section">
+                            <div class="section-header">
+                                <h2>چه کتابی می‌خوانی؟</h2>
+                            </div>
+                            <textarea id="quick-note-input" rows="3" placeholder="یک یادداشت سریع یا نقل قول از کتابی که می‌خوانی بنویس..."></textarea>
+                            <button class="btn-primary clickable w-100" id="quick-note-post-btn" style="margin-top: 10px;">اشتراک‌گذاری</button>
+                        </section>
+                    </div>
 
                     <!-- Currently Reading Section -->
                     <section class="dashboard-section currently-reading-section hidden" id="currently-reading-section">
@@ -130,6 +209,22 @@
                             <p>میو! اینجا خیلی خلوته، هنوز کتابی اضافه نکردی.</p>
                         </div>
                     </section>
+
+                    <!-- Community reading now + Friends activity feed (mock data) -->
+                    <div class="dashboard-two-col">
+                        <section class="dashboard-section glass community-reading-section">
+                            <div class="section-header">
+                                <h2>در حال مطالعه (همه کاربران)</h2>
+                            </div>
+                            <div class="community-reading-list" id="community-reading-list"><!-- MOCK_COMMUNITY_READING rendered here --></div>
+                        </section>
+                        <section class="dashboard-section glass friends-activity-section">
+                            <div class="section-header">
+                                <h2>فعالیت دوستان</h2>
+                            </div>
+                            <div class="friends-activity-feed" id="friends-activity-feed"><!-- MOCK_FRIENDS_ACTIVITY rendered here --></div>
+                        </section>
+                    </div>
                 </div>
 
                 <!-- Explore / Community Tab View -->
@@ -358,6 +453,72 @@
 
             </div>
         </main>
+
+        <!-- LEFT WIDGETS COLUMN -->
+        <aside class="left-widgets">
+
+            <!-- Profile Card Widget -->
+            <div class="widget-card glass profile-widget">
+                <div class="profile-widget-avatar">🐈‍⬛</div>
+                <h3 class="profile-widget-name">سارا</h3>
+                <p class="profile-widget-tagline">عاشق کتاب و قهوه</p>
+                <span class="profile-widget-level">سطح ۱۲</span>
+                <div class="profile-widget-stats">
+                    <div class="pw-stat"><strong id="pw-stat-reading">۳</strong><span>در حال مطالعه</span></div>
+                    <div class="pw-stat"><strong id="pw-stat-hours">۱۴۲</strong><span>ساعت مطالعه</span></div>
+                    <div class="pw-stat"><strong id="pw-stat-total">۲۸</strong><span>کل کتاب‌ها</span></div>
+                </div>
+                <div class="profile-widget-level-bar">
+                    <div class="profile-widget-level-fill" style="width: 68%;"></div>
+                </div>
+            </div>
+
+            <!-- Pomodoro Widget -->
+            <div class="widget-card glass pomodoro-widget">
+                <div class="widget-header">
+                    <span class="widget-icon">🍅</span>
+                    <h3>پومودورو</h3>
+                </div>
+                <span class="pomodoro-status" id="pomodoro-status">در حال مطالعه</span>
+                <div class="pomodoro-timer" id="pomodoro-timer">۲۴:۵۹</div>
+                <div class="pomodoro-book">
+                    <span id="pomodoro-book-title">عادت‌های اتمی</span>
+                    <span class="pomodoro-book-author" id="pomodoro-book-author">جیمز کلیر</span>
+                </div>
+                <div class="pomodoro-cat-scene"><span>🐈‍⬛</span></div>
+                <div class="pomodoro-controls">
+                    <button class="btn-secondary clickable" id="pomodoro-toggle-btn">توقف</button>
+                    <button class="btn-secondary clickable" id="pomodoro-reset-btn">ریست</button>
+                </div>
+                <div class="pomodoro-sessions">جلسه <span id="pomodoro-session-current">۱</span> از <span id="pomodoro-session-total">۴</span></div>
+            </div>
+
+            <!-- Jalali Calendar Widget -->
+            <div class="widget-card glass calendar-widget">
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn clickable" id="calendar-prev-btn">‹</button>
+                    <span id="calendar-month-label">مرداد ۱۴۰۳</span>
+                    <button class="calendar-nav-btn clickable" id="calendar-next-btn">›</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+                </div>
+                <div class="calendar-grid" id="calendar-grid"><!-- JS generated day cells --></div>
+            </div>
+
+            <!-- Weekly Goal Widget -->
+            <div class="widget-card glass weekly-goal-widget">
+                <div class="widget-header">
+                    <span class="widget-icon">⭐</span>
+                    <h3>هدف هفتگی</h3>
+                </div>
+                <p class="weekly-goal-text"><span id="weekly-goal-current">۱۸</span> از <span id="weekly-goal-target">۲۴</span> ساعت مطالعه</p>
+                <div class="weekly-goal-bar">
+                    <div class="weekly-goal-fill" id="weekly-goal-fill" style="width: 75%;"></div>
+                </div>
+            </div>
+
+        </aside>
     </div>
 
     <!-- Modal for Adding Manual Book -->
@@ -369,13 +530,18 @@
             </div>
             <div class="modal-body">
                 <form class="manual-book-form" id="manual-book-form">
-                    <div class="form-group">
+                    <div class="form-group" style="position: relative;">
                         <label for="book-title">عنوان کتاب *</label>
-                        <input type="text" id="book-title" required placeholder="مثال: شاهنامه فردوسی">
+                        <input type="text" id="book-title" required autocomplete="off" placeholder="مثال: شاهنامه فردوسی">
+                        <div class="search-results hidden" id="manual-title-suggestions"></div>
                     </div>
                     <div class="form-group">
                         <label for="book-author">نویسنده / مترجم</label>
                         <input type="text" id="book-author" placeholder="مثال: ابوالقاسم فردوسی">
+                    </div>
+                    <div class="form-group">
+                        <label for="book-cover-url">آدرس تصویر جلد (اختیاری)</label>
+                        <input type="text" id="book-cover-url" placeholder="در صورت انتخاب از لیست پیشنهادها به‌صورت خودکار پر می‌شود">
                     </div>
                     <div class="form-group-row">
                         <div class="form-group">

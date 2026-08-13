@@ -443,10 +443,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             card.innerHTML = `
                 <div class="bc-cover" style="background: ${coverBg};"></div>
-                <h3 class="bc-title">${escapeHtml(book.title)}</h3>
-                <p class="bc-author">${escapeHtml(book.author || 'نویسنده نامشخص')}</p>
-                <div class="bc-stars">
-                    ★★★★★
+                <div class="bc-info">
+                    <div class="bc-info-cover" style="background: ${coverBg};"></div>
+                    <h3 class="bc-title">${escapeHtml(book.title)}</h3>
+                    <p class="bc-author">${escapeHtml(book.author || 'نویسنده نامشخص')}</p>
+                    <div class="bc-stars">★★★★★</div>
                 </div>
             `;
 
@@ -779,6 +780,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const searchInput = document.getElementById('book-search-input');
         if (searchInput) searchInput.value = '';
+        const titleSuggestions = document.getElementById('manual-title-suggestions');
+        if (titleSuggestions) {
+            titleSuggestions.innerHTML = '';
+            titleSuggestions.classList.add('hidden');
+        }
     }
 
     if (manualForm) {
@@ -789,7 +795,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const author = document.getElementById('book-author').value.trim();
             const totalPages = parseInt(document.getElementById('book-pages').value) || 0;
             const status = document.getElementById('book-status').value;
-            const coverUrl = manualForm.dataset.coverUrl || '';
+            const coverUrlInput = document.getElementById('book-cover-url');
+            const coverUrl = (coverUrlInput && coverUrlInput.value.trim()) || manualForm.dataset.coverUrl || '';
 
             const newBook = {
                 id: 'book-' + Date.now(),
@@ -869,6 +876,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let searchRequestId = 0;
 
+    async function fetchCombinedSearchResults(query) {
+        // Run parallel search on Taaghche, Fidibo, and OpenLibrary
+        const [taaghcheResults, fidiboResults, openLibraryResults] = await Promise.all([
+            searchTaaghcheAPI(query),
+            searchFidiboAPI(query),
+            searchOpenLibraryAPI(query)
+        ]);
+
+        const combinedResults = [];
+
+        // Add source metadata to results
+        taaghcheResults.forEach(item => {
+            combinedResults.push({
+                id: item.id,
+                title: item.title,
+                author: item.category || 'کتاب الکترونیکی طاقچه',
+                coverUrl: `https://img.taaghche.com/${item.type === 'audioBook' ? 'audioCover' : 'frontCover'}/${item.id}.jpg`,
+                source: 'taaghche',
+                sourceLabel: 'طاقچه',
+                link: `https://taaghche.com/book/${item.id}`,
+                pages: 200 // default
+            });
+        });
+
+        fidiboResults.forEach(item => {
+            const authorLabel = item.content_type === 'audiobook' ? 'کتاب صوتی فیدیبو' : 'کتاب الکترونیکی فیدیبو';
+            combinedResults.push({
+                id: item.id,
+                title: item.title,
+                author: authorLabel,
+                coverUrl: item.image,
+                source: 'fidibo',
+                sourceLabel: 'فیدیبو',
+                link: `https://fidibo.com/book/${item.id}`,
+                pages: 200 // default
+            });
+        });
+
+        openLibraryResults.forEach(item => {
+            combinedResults.push({
+                id: item.id,
+                title: item.title,
+                author: item.author,
+                coverUrl: item.coverUrl,
+                source: 'openlibrary',
+                sourceLabel: 'OpenLibrary',
+                link: item.link,
+                pages: item.pages
+            });
+        });
+
+        return combinedResults;
+    }
+
     async function performBookSearch() {
         const query = searchInput.value.trim();
         if (!query) return;
@@ -886,12 +947,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            // Run parallel search on Taaghche, Fidibo, and OpenLibrary
-            const [taaghcheResults, fidiboResults, openLibraryResults] = await Promise.all([
-                searchTaaghcheAPI(query),
-                searchFidiboAPI(query),
-                searchOpenLibraryAPI(query)
-            ]);
+            const combinedResults = await fetchCombinedSearchResults(query);
 
             if (requestId !== searchRequestId) return; // a newer search superseded this one
 
@@ -900,52 +956,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 searchBtn.disabled = false;
             }
 
-            // Combine and merge results
-            const combinedResults = [];
-            
-            // Add source metadata to results
-            taaghcheResults.forEach(item => {
-                combinedResults.push({
-                    id: item.id,
-                    title: item.title,
-                    author: item.category || 'کتاب الکترونیکی طاقچه',
-                    coverUrl: `https://img.taaghche.com/${item.type === 'audioBook' ? 'audioCover' : 'frontCover'}/${item.id}.jpg`,
-                    source: 'taaghche',
-                    sourceLabel: 'طاقچه',
-                    link: `https://taaghche.com/book/${item.id}`,
-                    pages: 200 // default
-                });
-            });
-
-            fidiboResults.forEach(item => {
-                const authorLabel = item.content_type === 'audiobook' ? 'کتاب صوتی فیدیبو' : 'کتاب الکترونیکی فیدیبو';
-                combinedResults.push({
-                    id: item.id,
-                    title: item.title,
-                    author: authorLabel,
-                    coverUrl: item.image,
-                    source: 'fidibo',
-                    sourceLabel: 'فیدیبو',
-                    link: `https://fidibo.com/book/${item.id}`,
-                    pages: 200 // default
-                });
-            });
-
-            openLibraryResults.forEach(item => {
-                combinedResults.push({
-                    id: item.id,
-                    title: item.title,
-                    author: item.author,
-                    coverUrl: item.coverUrl,
-                    source: 'openlibrary',
-                    sourceLabel: 'OpenLibrary',
-                    link: item.link,
-                    pages: item.pages
-                });
-            });
-
             if (combinedResults.length > 0) {
-                renderSearchResults(combinedResults);
+                renderSearchResults(combinedResults, searchResultsList, (item) => {
+                    document.getElementById('book-title').value = item.title;
+                    document.getElementById('book-author').value = item.source === 'openlibrary' ? item.author : '';
+                    document.getElementById('book-pages').value = item.pages;
+
+                    const coverUrlInput = document.getElementById('book-cover-url');
+                    if (coverUrlInput) coverUrlInput.value = item.coverUrl || '';
+
+                    if (manualForm) {
+                        manualForm.dataset.coverUrl = item.coverUrl;
+                        manualForm.dataset.storeLink = item.link;
+                        manualForm.dataset.storeSource = item.source;
+                    }
+
+                    searchResultsList.classList.add('hidden');
+                    searchResultsList.innerHTML = '';
+
+                    // Open manual modal for user confirmation/completion
+                    if (addBookModal) addBookModal.classList.remove('hidden');
+                });
             } else {
                 searchResultsList.innerHTML = '<div style="padding: 12px; text-align: center; font-size:11px; color: var(--text-secondary);">کتابی یافت نشد. اطلاعات را دستی وارد کنید.</div>';
                 searchResultsList.classList.remove('hidden');
@@ -960,6 +991,76 @@ document.addEventListener('DOMContentLoaded', async () => {
             searchResultsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #e63946; font-size:11px;">خطا در برقراری ارتباط با پلتفرم‌ها.</div>';
             searchResultsList.classList.remove('hidden');
         }
+    }
+
+    // --- Live suggestions while typing the book title inside the manual-add modal ---
+    const manualTitleInput = document.getElementById('book-title');
+    const manualTitleSuggestions = document.getElementById('manual-title-suggestions');
+    let manualTitleDebounceTimer = null;
+    let manualTitleRequestId = 0;
+
+    if (manualTitleInput && manualTitleSuggestions) {
+        manualTitleInput.addEventListener('input', () => {
+            clearTimeout(manualTitleDebounceTimer);
+            const query = manualTitleInput.value.trim();
+
+            // Typing a fresh title invalidates any previously selected suggestion's cover/link
+            delete manualForm.dataset.coverUrl;
+            delete manualForm.dataset.storeLink;
+            delete manualForm.dataset.storeSource;
+
+            if (!query || query.length < 2) {
+                manualTitleSuggestions.innerHTML = '';
+                manualTitleSuggestions.classList.add('hidden');
+                return;
+            }
+
+            manualTitleDebounceTimer = setTimeout(async () => {
+                const requestId = ++manualTitleRequestId;
+                manualTitleSuggestions.innerHTML = '<div style="padding: 12px; text-align: center; font-size:11px; color: var(--text-secondary);">در حال جستجو...</div>';
+                manualTitleSuggestions.classList.remove('hidden');
+
+                try {
+                    const results = await fetchCombinedSearchResults(query);
+                    if (requestId !== manualTitleRequestId) return;
+
+                    if (results.length > 0) {
+                        renderSearchResults(results, manualTitleSuggestions, (item) => {
+                            manualTitleInput.value = item.title;
+                            document.getElementById('book-author').value = item.source === 'openlibrary' ? item.author : '';
+                            document.getElementById('book-pages').value = item.pages;
+
+                            const coverUrlInput = document.getElementById('book-cover-url');
+                            if (coverUrlInput) coverUrlInput.value = item.coverUrl || '';
+
+                            manualForm.dataset.coverUrl = item.coverUrl;
+                            manualForm.dataset.storeLink = item.link;
+                            manualForm.dataset.storeSource = item.source;
+
+                            manualTitleSuggestions.classList.add('hidden');
+                            manualTitleSuggestions.innerHTML = '';
+                        });
+                    } else {
+                        manualTitleSuggestions.innerHTML = '';
+                        manualTitleSuggestions.classList.add('hidden');
+                    }
+                } catch (err) {
+                    if (requestId !== manualTitleRequestId) return;
+                    console.error("Manual title suggestion search failed:", err);
+                    manualTitleSuggestions.innerHTML = '';
+                    manualTitleSuggestions.classList.add('hidden');
+                }
+            }, 400);
+        });
+
+        // Close suggestions dropdown on click outside
+        document.addEventListener('click', (e) => {
+            if (!manualTitleSuggestions.classList.contains('hidden')) {
+                if (!manualTitleInput.contains(e.target) && !manualTitleSuggestions.contains(e.target)) {
+                    manualTitleSuggestions.classList.add('hidden');
+                }
+            }
+        });
     }
 
     async function searchOpenLibraryAPI(query) {
@@ -982,10 +1083,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return [];
     }
 
-    function renderSearchResults(results) {
-        if (!searchResultsList) return;
-        searchResultsList.innerHTML = '';
-        searchResultsList.classList.remove('hidden');
+    function renderSearchResults(results, listEl, onSelect) {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        listEl.classList.remove('hidden');
 
         results.forEach(item => {
             const row = document.createElement('div');
@@ -1006,27 +1107,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const selectBtn = row.querySelector('.select-search-btn');
             const handleSelect = (e) => {
                 e.stopPropagation();
-                document.getElementById('book-title').value = item.title;
-                document.getElementById('book-author').value = item.source === 'openlibrary' ? item.author : '';
-                document.getElementById('book-pages').value = item.pages;
-                
-                if (manualForm) {
-                    manualForm.dataset.coverUrl = item.coverUrl;
-                    manualForm.dataset.storeLink = item.link;
-                    manualForm.dataset.storeSource = item.source;
-                }
-                
-                searchResultsList.classList.add('hidden');
-                searchResultsList.innerHTML = '';
-
-                // Open manual modal for user confirmation/completion
-                if (addBookModal) addBookModal.classList.remove('hidden');
+                onSelect(item);
             };
 
             row.addEventListener('click', handleSelect);
             selectBtn.addEventListener('click', handleSelect);
 
-            searchResultsList.appendChild(row);
+            listEl.appendChild(row);
         });
     }
 
@@ -1849,4 +1936,322 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadWordBank();
     renderCharts();
     renderProfileView();
+});
+
+// =====================================================================
+// 🐾 NEW DASHBOARD REDESIGN — VISUAL-ONLY MOCK DATA SECTIONS 🐾
+// Everything below is static/demo data for the new hero card, friends
+// "reading now" row, community list, activity feed, and the left-column
+// widgets (profile / pomodoro / Jalali calendar / weekly goal).
+// None of this reads or writes chrome.storage — it is purely illustrative
+// until real backend/social wiring is added later.
+// =====================================================================
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- MOCK DATA (demo only, not persisted) ---
+    const MOCK_FRIENDS_READING = [
+        { name: 'نیلوفر', emoji: '🐱', book: 'ملت عشق', page: '۱۲۰/۳۰۰', status: 'reading' },
+        { name: 'آرش', emoji: '🐈', book: 'کیمیاگر', page: '۸۰/۱۸۰', status: 'reading' },
+        { name: 'مهسا', emoji: '🐾', book: 'بوف کور', page: '۵۰/۱۲۰', status: 'resting' },
+        { name: 'کیان', emoji: '📚', book: 'صد سال تنهایی', page: '۲۰۰/۴۵۰', status: 'reading' },
+        { name: 'ترانه', emoji: '🐈‍⬛', book: 'شازده کوچولو', page: '۶۰/۹۶', status: 'resting' }
+    ];
+
+    const MOCK_COMMUNITY_READING = [
+        { name: 'رضا احمدی', emoji: '📖', book: 'جنایت و مکافات', page: '۱۸۰', pct: '۴۰٪' },
+        { name: 'سمانه کریمی', emoji: '📕', book: 'خشم و هیاهو', page: '۹۰', pct: '۲۵٪' },
+        { name: 'بابک نوری', emoji: '📗', book: 'تفکر سریع و کند', page: '۳۰۰', pct: '۶۵٪' },
+        { name: 'الناز رستمی', emoji: '📘', book: 'میم', page: '۴۵', pct: '۱۵٪' }
+    ];
+
+    const MOCK_FRIENDS_ACTIVITY = [
+        { icon: '📖', text: '<strong>نیلوفر</strong> مطالعه‌ی «ملت عشق» را شروع کرد', time: '۲۰ دقیقه پیش' },
+        { icon: '🎉', text: '<strong>آرش</strong> کتاب «کیمیاگر» را به پایان رساند', time: '۱ ساعت پیش' },
+        { icon: '🍅', text: '<strong>مهسا</strong> یک جلسه پومودورو ۲۵ دقیقه‌ای انجام داد', time: '۳ ساعت پیش' },
+        { icon: '🔥', text: '<strong>کیان</strong> به رکورد ۷ روز متوالی مطالعه رسید', time: 'دیروز' },
+        { icon: '📚', text: '<strong>ترانه</strong> کتاب «شازده کوچولو» را به کتابخانه‌اش اضافه کرد', time: 'دیروز' }
+    ];
+
+    function escapeHtmlLocal(str) {
+        const div = document.createElement('div');
+        div.innerText = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    // --- Render: friends reading now (horizontal row) ---
+    const friendsNowRow = document.getElementById('friends-now-row');
+    if (friendsNowRow) {
+        friendsNowRow.innerHTML = MOCK_FRIENDS_READING.map(f => `
+            <div class="friend-now-card">
+                <div class="friend-now-avatar-wrap">
+                    <div class="friend-now-avatar">${f.emoji}</div>
+                    <span class="friend-now-status-dot ${f.status}"></span>
+                </div>
+                <div class="friend-now-name">${escapeHtmlLocal(f.name)}</div>
+                <div class="friend-now-book">${escapeHtmlLocal(f.book)}</div>
+                <div class="friend-now-pages">صفحه ${f.page}</div>
+            </div>
+        `).join('');
+    }
+
+    // --- Render: community reading now (list) ---
+    const communityList = document.getElementById('community-reading-list');
+    if (communityList) {
+        communityList.innerHTML = MOCK_COMMUNITY_READING.map(u => `
+            <div class="community-reading-row">
+                <div class="cr-avatar">${u.emoji}</div>
+                <div class="cr-info">
+                    <div class="cr-name">${escapeHtmlLocal(u.name)}</div>
+                    <div class="cr-book">${escapeHtmlLocal(u.book)} · صفحه ${u.page}</div>
+                </div>
+                <div class="cr-pct">${u.pct}</div>
+            </div>
+        `).join('');
+    }
+
+    // --- Render: friends activity feed ---
+    const activityFeed = document.getElementById('friends-activity-feed');
+    if (activityFeed) {
+        activityFeed.innerHTML = MOCK_FRIENDS_ACTIVITY.map(a => `
+            <div class="activity-item">
+                <span class="activity-icon">${a.icon}</span>
+                <span class="activity-text">${a.text}<span class="activity-time">${a.time}</span></span>
+            </div>
+        `).join('');
+    }
+
+    // --- Quick note / composer (mock, local only — no persistence yet) ---
+    const quickNotePostBtn = document.getElementById('quick-note-post-btn');
+    if (quickNotePostBtn) {
+        quickNotePostBtn.addEventListener('click', () => {
+            const input = document.getElementById('quick-note-input');
+            if (input && input.value.trim()) {
+                alert('یادداشت شما ذخیره شد! (این بخش هنوز نمایشی است و به سرور متصل نیست)');
+                input.value = '';
+            }
+        });
+    }
+    const heroQuickNoteBtn = document.getElementById('hero-quick-note-btn');
+    if (heroQuickNoteBtn) {
+        heroQuickNoteBtn.addEventListener('click', () => {
+            const quickNoteInput = document.getElementById('quick-note-input');
+            if (quickNoteInput) quickNoteInput.focus();
+        });
+    }
+
+    // --- Notification bell / light-dark mode icon toggle (visual-only, mock) ---
+    const notifBellBtn = document.getElementById('notif-bell-btn');
+    if (notifBellBtn) {
+        notifBellBtn.addEventListener('click', () => {
+            const badge = document.getElementById('notif-badge');
+            if (badge) badge.classList.toggle('hidden');
+        });
+    }
+    const modeToggleBtn = document.getElementById('mode-toggle-btn');
+    if (modeToggleBtn) {
+        modeToggleBtn.addEventListener('click', () => {
+            const themeBtn = document.getElementById('theme-toggle-btn');
+            if (themeBtn) themeBtn.click();
+        });
+    }
+
+    // --- Simple Jalali (Persian) calendar widget — pure JS conversion, no deps ---
+    const PERSIAN_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+    const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+    function toPersianDigitsLocal(n) {
+        return String(n).replace(/[0-9]/g, d => PERSIAN_DIGITS[d]);
+    }
+
+    // Gregorian -> Jalali conversion (standard algorithm)
+    function gregorianToJalali(gy, gm, gd) {
+        const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        let jy;
+        const gy2 = (gm > 2) ? (gy + 1) : gy;
+        let days = 355666 + (365 * gy) + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400) + gd + g_d_m[gm - 1];
+        jy = -1595 + (33 * Math.floor(days / 12053));
+        days %= 12053;
+        jy += 4 * Math.floor(days / 1461);
+        days %= 1461;
+        if (days > 365) {
+            jy += Math.floor((days - 1) / 365);
+            days = (days - 1) % 365;
+        }
+        let jm, jd;
+        if (days < 186) {
+            jm = 1 + Math.floor(days / 31);
+            jd = 1 + (days % 31);
+        } else {
+            jm = 7 + Math.floor((days - 186) / 30);
+            jd = 1 + ((days - 186) % 30);
+        }
+        return [jy, jm, jd];
+    }
+
+    // Jalali -> Gregorian (needed to know which weekday the 1st of the month falls on)
+    function jalaliToGregorian(jy, jm, jd) {
+        jy += 1595;
+        let days = -355668 + (365 * jy) + (Math.floor(jy / 33) * 8) + Math.floor(((jy % 33) + 3) / 4) + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+        let gy = 400 * Math.floor(days / 146097);
+        days %= 146097;
+        if (days > 36524) {
+            gy += 100 * Math.floor(--days / 36524);
+            days %= 36524;
+            if (days >= 365) days++;
+        }
+        gy += 4 * Math.floor(days / 1461);
+        days %= 1461;
+        if (days > 365) {
+            gy += Math.floor((days - 1) / 365);
+            days = (days - 1) % 365;
+        }
+        const gd = days + 1;
+        const sal_a = [0, 31, ((gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let gm = 0, gdRemain = gd;
+        for (gm = 1; gm <= 12 && gdRemain > sal_a[gm]; gm++) {
+            gdRemain -= sal_a[gm];
+        }
+        return new Date(gy, gm - 1, gdRemain);
+    }
+
+    function jalaliMonthLength(jy, jm) {
+        if (jm <= 6) return 31;
+        if (jm <= 11) return 30;
+        // Esfand: 29 or 30 (leap) — approximate via conversion round-trip
+        const isLeap = ((((jy - (jy > 0 ? 474 : 473)) % 2820) + 474 + 38) * 682 % 2816) < 682;
+        return isLeap ? 30 : 29;
+    }
+
+    let calState = null; // { jy, jm }
+
+    function renderCalendar() {
+        const monthLabel = document.getElementById('calendar-month-label');
+        const grid = document.getElementById('calendar-grid');
+        if (!monthLabel || !grid) return;
+
+        const now = new Date();
+        const [todayJy, todayJm, todayJd] = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+        if (!calState) calState = { jy: todayJy, jm: todayJm };
+
+        monthLabel.innerText = `${PERSIAN_MONTHS[calState.jm - 1]} ${toPersianDigitsLocal(calState.jy)}`;
+
+        // Find weekday of the 1st of this Jalali month (Saturday = 0 ... Friday = 6)
+        const firstDayGregorian = jalaliToGregorian(calState.jy, calState.jm, 1);
+        const jsWeekday = firstDayGregorian.getDay(); // Sun=0..Sat=6
+        const leadingBlanks = (jsWeekday + 1) % 7; // shift so Saturday = 0
+
+        const daysInMonth = jalaliMonthLength(calState.jy, calState.jm);
+
+        let html = '';
+        for (let i = 0; i < leadingBlanks; i++) {
+            html += `<span class="calendar-day empty"></span>`;
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+            const isToday = (calState.jy === todayJy && calState.jm === todayJm && d === todayJd);
+            html += `<span class="calendar-day${isToday ? ' today' : ''}">${toPersianDigitsLocal(d)}</span>`;
+        }
+        grid.innerHTML = html;
+    }
+
+    const calPrevBtn = document.getElementById('calendar-prev-btn');
+    const calNextBtn = document.getElementById('calendar-next-btn');
+    if (calPrevBtn) {
+        calPrevBtn.addEventListener('click', () => {
+            if (!calState) return;
+            calState.jm--;
+            if (calState.jm < 1) { calState.jm = 12; calState.jy--; }
+            renderCalendar();
+        });
+    }
+    if (calNextBtn) {
+        calNextBtn.addEventListener('click', () => {
+            if (!calState) return;
+            calState.jm++;
+            if (calState.jm > 12) { calState.jm = 1; calState.jy++; }
+            renderCalendar();
+        });
+    }
+    renderCalendar();
+
+    // --- Pomodoro widget (real countdown via setInterval, local only — no persistence) ---
+    const POMODORO_WORK_SECONDS = 25 * 60;
+    let pomodoroSecondsLeft = POMODORO_WORK_SECONDS - 1; // starts at 24:59 to match the reference design
+    let pomodoroRunning = true;
+    let pomodoroInterval = null;
+    let pomodoroSessionCurrent = 1;
+    const POMODORO_SESSION_TOTAL = 4;
+
+    const pomodoroTimerEl = document.getElementById('pomodoro-timer');
+    const pomodoroToggleBtn = document.getElementById('pomodoro-toggle-btn');
+    const pomodoroResetBtn = document.getElementById('pomodoro-reset-btn');
+    const pomodoroStatusEl = document.getElementById('pomodoro-status');
+    const pomodoroSessionCurrentEl = document.getElementById('pomodoro-session-current');
+
+    function renderPomodoroTimer() {
+        if (!pomodoroTimerEl) return;
+        const mins = Math.floor(pomodoroSecondsLeft / 60);
+        const secs = pomodoroSecondsLeft % 60;
+        const padded = `${toPersianDigitsLocal(String(mins).padStart(2, '0'))}:${toPersianDigitsLocal(String(secs).padStart(2, '0'))}`;
+        pomodoroTimerEl.innerText = padded;
+    }
+
+    function tickPomodoro() {
+        if (pomodoroSecondsLeft <= 0) {
+            clearInterval(pomodoroInterval);
+            pomodoroRunning = false;
+            if (pomodoroSessionCurrent < POMODORO_SESSION_TOTAL) {
+                pomodoroSessionCurrent++;
+                if (pomodoroSessionCurrentEl) pomodoroSessionCurrentEl.innerText = toPersianDigitsLocal(pomodoroSessionCurrent);
+            }
+            if (pomodoroStatusEl) pomodoroStatusEl.innerText = 'پایان جلسه! کمی استراحت کن 🐾';
+            if (pomodoroToggleBtn) pomodoroToggleBtn.innerText = 'شروع مجدد';
+            return;
+        }
+        pomodoroSecondsLeft--;
+        renderPomodoroTimer();
+    }
+
+    function startPomodoro() {
+        pomodoroRunning = true;
+        if (pomodoroToggleBtn) pomodoroToggleBtn.innerText = 'توقف';
+        if (pomodoroStatusEl) pomodoroStatusEl.innerText = 'در حال مطالعه';
+        pomodoroInterval = setInterval(tickPomodoro, 1000);
+    }
+
+    function pausePomodoro() {
+        pomodoroRunning = false;
+        clearInterval(pomodoroInterval);
+        if (pomodoroToggleBtn) pomodoroToggleBtn.innerText = 'ادامه';
+        if (pomodoroStatusEl) pomodoroStatusEl.innerText = 'متوقف شده';
+    }
+
+    if (pomodoroToggleBtn) {
+        pomodoroToggleBtn.addEventListener('click', () => {
+            if (pomodoroSecondsLeft <= 0) {
+                pomodoroSecondsLeft = POMODORO_WORK_SECONDS;
+                renderPomodoroTimer();
+                startPomodoro();
+                return;
+            }
+            if (pomodoroRunning) {
+                pausePomodoro();
+            } else {
+                startPomodoro();
+            }
+        });
+    }
+    if (pomodoroResetBtn) {
+        pomodoroResetBtn.addEventListener('click', () => {
+            clearInterval(pomodoroInterval);
+            pomodoroSecondsLeft = POMODORO_WORK_SECONDS - 1;
+            pomodoroSessionCurrent = 1;
+            if (pomodoroSessionCurrentEl) pomodoroSessionCurrentEl.innerText = toPersianDigitsLocal(pomodoroSessionCurrent);
+            renderPomodoroTimer();
+            startPomodoro();
+        });
+    }
+
+    renderPomodoroTimer();
+    if (pomodoroRunning) startPomodoro();
 });

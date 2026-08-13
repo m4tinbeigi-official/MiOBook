@@ -49,13 +49,22 @@ body {
     cursor: pointer;
 }
 
-/* 2-Column Layout */
+/* 3-Column Layout (sidebar / main / left-widgets) */
 .dashboard-wrapper {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 230px 1fr 300px;
     height: 100vh;
     width: 100%;
     overflow: hidden;
+}
+
+@media (max-width: 1180px) {
+    .dashboard-wrapper {
+        grid-template-columns: 230px 1fr;
+    }
+    .left-widgets {
+        display: none;
+    }
 }
 
 /* Sidebar */
@@ -77,23 +86,9 @@ body {
     margin-bottom: 48px;
 }
 
-.logo-icon {
-    width: 44px;
+.logo-img {
     height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    box-shadow: 0 4px 16px var(--accent-glow);
-}
-
-.sidebar-logo h2 {
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    margin: 0;
+    width: auto;
 }
 
 .nav-links {
@@ -407,79 +402,155 @@ body {
     margin-right: auto;
 }
 
+/* Real-bookshelf layout: books stand as spines on wooden shelves,
+   wrapping into as many rows as needed so every book stays visible
+   at once (no pagination, no clipping). */
 .library-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 24px;
+    --shelf-book-h: 172px;
+    --shelf-plank-h: 16px;
+    --shelf-row-gap: 34px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    align-content: flex-start;
+    gap: 0 2px;
+    padding: 4px 10px calc(var(--shelf-row-gap) + 4px);
+    background-image:
+        linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 100%),
+        repeating-linear-gradient(180deg,
+            transparent 0,
+            transparent calc(var(--shelf-book-h) + 10px),
+            #6b4a2e calc(var(--shelf-book-h) + 10px),
+            #7d5735 calc(var(--shelf-book-h) + 10px + var(--shelf-plank-h) / 2),
+            #4a3018 calc(var(--shelf-book-h) + var(--shelf-plank-h)),
+            transparent calc(var(--shelf-book-h) + var(--shelf-row-gap))
+        );
+    background-size: 100% 100%, 100% calc(var(--shelf-book-h) + var(--shelf-row-gap));
+    border-radius: var(--radius-md);
     transition: gap 0.2s ease;
 }
 
 /* Shrinks covers automatically once the shelf gets crowded, so a growing
    collection keeps fitting without scrolling forever. */
 .library-grid.compact {
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-    gap: 12px;
+    --shelf-book-h: 118px;
+    --shelf-plank-h: 12px;
+    --shelf-row-gap: 26px;
 }
 .library-grid.compact .book-card {
-    padding: 8px;
+    width: 42px;
 }
-.library-grid.compact .bc-cover {
-    margin-bottom: 8px;
-}
-.library-grid.compact .bc-title {
-    font-size: 11px;
-}
-.library-grid.compact .bc-author {
-    font-size: 9px;
-    margin-bottom: 4px;
-}
-.library-grid.compact .bc-stars {
+.library-grid.compact .bc-title-fold {
     font-size: 9px;
 }
 
 .book-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 12px;
+    position: relative;
+    width: 56px;
+    height: var(--shelf-book-h);
     display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    transition: var(--transition-fast);
+    align-items: flex-end;
+    cursor: grab;
+    transform-origin: bottom center;
+    transition: transform 0.25s ease, filter 0.25s ease;
 }
+
+/* Slight per-book height/tilt variance so the row reads as hand-shelved
+   books rather than a uniform grid — purely cosmetic, keeps shelf lines
+   intact since only a few px of the tallest books poke above the plank. */
+.book-card:nth-child(4n) { height: calc(var(--shelf-book-h) - 10px); }
+.book-card:nth-child(7n) { height: calc(var(--shelf-book-h) - 6px); }
+.book-card:nth-child(5n+2) { transform: rotate(-1.5deg); }
+.book-card:nth-child(9n+3) { transform: rotate(1.5deg); }
 
 .book-card:hover {
-    background: var(--bg-card-hover);
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-card);
-    border-color: var(--border-glass);
+    transform: translateY(-14px) rotate(0deg) !important;
+    filter: brightness(1.15);
+    z-index: 5;
 }
 
-/* Drag-to-reorder states */
-.book-card {
-    cursor: grab;
-}
 .book-card.dragging {
     opacity: 0.4;
     cursor: grabbing;
 }
 .book-card.drag-over {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px var(--accent-color) inset;
+    filter: brightness(1.3) drop-shadow(0 0 6px var(--accent-color));
 }
 
 .bc-cover {
     width: 100%;
-    aspect-ratio: 2 / 3;
-    border-radius: var(--radius-sm);
+    height: 100%;
+    border-radius: 3px 6px 6px 3px;
     background-size: cover;
     background-position: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    margin-bottom: 16px;
+    position: relative;
+    box-shadow:
+        0 6px 10px rgba(0,0,0,0.45),
+        inset -3px 0 0 rgba(255,255,255,0.12),
+        inset 2px 0 0 rgba(0,0,0,0.35);
+    overflow: hidden;
+}
+
+/* Page-block edge on the spine's inner side, like a real book viewed
+   from the shelf. */
+.bc-cover::before {
+    content: '';
+    position: absolute;
+    inset: 3px auto 3px 3px;
+    width: 3px;
+    background: repeating-linear-gradient(180deg, rgba(255,255,255,0.5) 0 1px, rgba(255,255,255,0.15) 1px 2px);
+    border-radius: 2px;
 }
 
 .bc-title {
-    font-size: 14px;
+    display: none;
+}
+
+.bc-author {
+    display: none;
+}
+
+.bc-stars {
+    display: none;
+}
+
+/* Hover card: floats the full cover + title/author/stars above the
+   spine, like pulling the book toward you off the shelf. */
+.bc-info {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px) scale(0.96);
+    width: 148px;
+    background: #1A1F2C;
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-glass);
+    padding: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 10;
+}
+
+.book-card:hover .bc-info {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.bc-info .bc-info-cover {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: 6px;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    margin-bottom: 8px;
+}
+
+.bc-info .bc-title {
+    display: block;
+    font-size: 13px;
     font-weight: 700;
     margin: 0 0 4px 0;
     white-space: nowrap;
@@ -487,16 +558,17 @@ body {
     text-overflow: ellipsis;
 }
 
-.bc-author {
+.bc-info .bc-author {
+    display: block;
     font-size: 11px;
     color: var(--text-secondary);
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.bc-stars {
+.bc-info .bc-stars {
     display: flex;
     gap: 2px;
     color: #FFC107;
@@ -899,12 +971,11 @@ body {
 /* 🐾 CAT THEME (فاز گربه) EXTENSIONS 🐾 */
 /* ========================================= */
 
-/* Cat Ears on Book Covers */
-.bc-cover, .rc-cover {
+/* Cat Ears on Reading Covers (library spines use their own page-edge accent) */
+.rc-cover {
     position: relative;
 }
 
-.bc-cover::before, .bc-cover::after,
 .rc-cover::before, .rc-cover::after {
     content: '';
     position: absolute;
@@ -919,22 +990,20 @@ body {
     transition: transform 0.3s ease;
 }
 
-.bc-cover::before, .rc-cover::before {
+.rc-cover::before {
     left: 10%;
     transform: rotate(-15deg);
 }
 
-.bc-cover::after, .rc-cover::after {
+.rc-cover::after {
     right: 10%;
     transform: rotate(15deg);
 }
 
-.book-card:hover .bc-cover::before,
 .reading-card:hover .rc-cover::before {
     transform: rotate(-25deg) translateY(-2px);
 }
 
-.book-card:hover .bc-cover::after,
 .reading-card:hover .rc-cover::after {
     transform: rotate(25deg) translateY(-2px);
 }
@@ -958,4 +1027,757 @@ body {
 /* Small paw prints for buttons */
 .btn-primary:active, .filter-btn:active {
     transform: scale(0.95);
+}
+
+/* ========================================= */
+/* 🐾 SIDEBAR MASCOT ILLUSTRATION 🐾 */
+/* ========================================= */
+
+.sidebar-mascot {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.mascot-scene {
+    position: relative;
+    height: 86px;
+    border-radius: var(--radius-md);
+    background: radial-gradient(circle at 50% 30%, rgba(255, 196, 120, 0.18), transparent 65%),
+                linear-gradient(180deg, rgba(140, 82, 255, 0.08), rgba(140, 82, 255, 0.02));
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.mascot-lamp-glow {
+    position: absolute;
+    top: -20px;
+    right: 14px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 200, 120, 0.55), transparent 70%);
+    filter: blur(2px);
+}
+
+.mascot-beanbag {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 76px;
+    height: 34px;
+    border-radius: 50% 50% 40% 40%;
+    background: linear-gradient(160deg, var(--accent-color), #5c33a3);
+    opacity: 0.5;
+}
+
+.mascot-cat {
+    font-size: 30px;
+    position: relative;
+    z-index: 2;
+    margin-bottom: 4px;
+}
+
+.mascot-book {
+    position: absolute;
+    bottom: 12px;
+    left: calc(50% + 20px);
+    font-size: 15px;
+    z-index: 2;
+    transform: rotate(-8deg);
+}
+
+.mascot-tagline {
+    font-size: 11px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ========================================= */
+/* 🐾 HEADER ICON BUTTONS 🐾 */
+/* ========================================= */
+
+.icon-btn {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+}
+
+.icon-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.icon-badge {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    background: var(--accent-color);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px var(--bg-main);
+}
+
+.search-kbd {
+    font-size: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ========================================= */
+/* 🐾 HERO "CURRENTLY READING" CARD 🐾 */
+/* ========================================= */
+
+.hero-reading-card {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 24px;
+    padding: 28px 32px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    overflow: hidden;
+    background: linear-gradient(120deg, rgba(140, 82, 255, 0.12), rgba(0, 210, 255, 0.05) 60%, transparent);
+}
+
+.hero-scene {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.hero-moon {
+    position: absolute;
+    top: 18px;
+    left: 40px;
+    font-size: 34px;
+    filter: drop-shadow(0 0 14px rgba(200, 200, 255, 0.5));
+}
+
+.hero-stars {
+    position: absolute;
+    top: 50px;
+    left: 110px;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.hero-cat {
+    position: absolute;
+    bottom: 14px;
+    left: 60px;
+    font-size: 40px;
+    transform: rotate(-6deg);
+}
+
+.hero-cushion {
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    width: 140px;
+    height: 26px;
+    border-radius: 50% 50% 30% 30%;
+    background: linear-gradient(160deg, var(--accent-secondary), var(--accent-color));
+    opacity: 0.25;
+}
+
+.hero-info {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.hero-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-secondary);
+    margin-bottom: 6px;
+}
+
+.hero-title {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 2px 0;
+}
+
+.hero-author {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 16px 0;
+}
+
+.hero-progress-bar {
+    width: 100%;
+    max-width: 360px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.hero-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+    border-radius: 10px;
+}
+
+.hero-progress-text {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.hero-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hero-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    font-family: var(--font-family);
+}
+
+.hero-chip-label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.hero-chip-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.hero-chip-btn {
+    background: var(--accent-color);
+    border: none;
+    cursor: pointer;
+    color: white;
+}
+
+.hero-chip-btn .hero-chip-label,
+.hero-chip-btn .hero-chip-value {
+    color: white;
+}
+
+.hero-cover {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    width: 130px;
+    border-radius: var(--radius-md);
+    background-size: cover;
+    background-position: center;
+    box-shadow: var(--shadow-card);
+}
+
+/* ========================================= */
+/* 🐾 TWO-COLUMN DASHBOARD ROWS 🐾 */
+/* ========================================= */
+
+.dashboard-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+    .dashboard-two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dashboard-two-col .dashboard-section {
+    margin-bottom: 0;
+    padding: 22px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+/* Friends "reading now" horizontal row */
+.friends-now-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.friend-now-card {
+    flex-shrink: 0;
+    width: 108px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px 8px;
+}
+
+.friend-now-avatar-wrap {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 8px;
+}
+
+.friend-now-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+}
+
+.friend-now-status-dot {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #1A1F2C;
+}
+
+.friend-now-status-dot.reading { background: #3ddc84; }
+.friend-now-status-dot.resting { background: #ffb454; }
+
+.friend-now-name {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-now-book {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.friend-now-pages {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* Quick note composer */
+#quick-note-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-primary);
+    resize: vertical;
+    font-family: var(--font-family);
+    font-size: 13px;
+}
+
+/* Community "reading now" list */
+.community-reading-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.community-reading-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.community-reading-row .cr-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+    flex-shrink: 0;
+}
+
+.cr-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.cr-name {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.cr-book {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cr-pct {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-secondary);
+    flex-shrink: 0;
+}
+
+/* Friends activity feed */
+.friends-activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.activity-icon {
+    flex-shrink: 0;
+    font-size: 15px;
+}
+
+.activity-text strong {
+    color: var(--text-primary);
+}
+
+.activity-time {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+/* ========================================= */
+/* 🐾 LEFT WIDGETS COLUMN 🐾 */
+/* ========================================= */
+
+.left-widgets {
+    padding: 24px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-right: 1px solid var(--border-glass);
+}
+
+.widget-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.widget-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.widget-header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.widget-icon {
+    font-size: 16px;
+}
+
+/* Profile Widget */
+.profile-widget {
+    text-align: center;
+}
+
+.profile-widget-avatar {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.profile-widget-name {
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.profile-widget-tagline {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin: 2px 0 10px;
+}
+
+.profile-widget-level {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-color);
+    background: rgba(140, 82, 255, 0.12);
+    border-radius: 100px;
+    padding: 3px 12px;
+    margin-bottom: 14px;
+}
+
+.profile-widget-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.pw-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pw-stat strong {
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.pw-stat span {
+    font-size: 9px;
+    color: var(--text-muted);
+}
+
+.profile-widget-level-bar {
+    width: 100%;
+    height: 5px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.profile-widget-level-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+    border-radius: 10px;
+}
+
+/* Pomodoro Widget */
+.pomodoro-widget {
+    text-align: center;
+}
+
+.pomodoro-widget .widget-header {
+    justify-content: center;
+}
+
+.pomodoro-status {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--accent-secondary);
+    background: rgba(0, 210, 255, 0.1);
+    border-radius: 100px;
+    padding: 3px 12px;
+    margin-bottom: 10px;
+}
+
+.pomodoro-timer {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.pomodoro-book {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-bottom: 10px;
+}
+
+.pomodoro-book span:first-child {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pomodoro-book-author {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.pomodoro-cat-scene {
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: radial-gradient(circle at 50% 100%, rgba(140, 82, 255, 0.18), transparent 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 12px;
+}
+
+.pomodoro-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.pomodoro-controls .btn-secondary {
+    flex: 1;
+    font-size: 12px;
+    padding: 8px;
+}
+
+.pomodoro-sessions {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Calendar Widget */
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.calendar-nav-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-nav-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    border-radius: 50%;
+    color: var(--text-secondary);
+}
+
+.calendar-day.empty {
+    visibility: hidden;
+}
+
+.calendar-day.today {
+    background: var(--accent-color);
+    color: white;
+    font-weight: 700;
+}
+
+/* Weekly Goal Widget */
+.weekly-goal-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.weekly-goal-text span {
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.weekly-goal-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.weekly-goal-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+    border-radius: 10px;
 }

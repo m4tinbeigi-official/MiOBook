@@ -9,6 +9,11 @@
       'nav.tools': 'ابزارهای مطالعه 🐾',
       'nav.settings': 'تنظیمات 🐾',
       'nav.profile': 'پروفایل 🐾',
+      'nav.now': 'اکنون 🐾',
+      'nav.notes': 'یادداشت‌ها 🐾',
+      'nav.quotes': 'نقل قول‌ها 🐾',
+      'nav.stats': 'آمار و گزارش 🐾',
+      'nav.friends': 'دوستان 🐾',
 
       'dash.title': 'داشبورد',
       'dash.searchPlaceholder': 'جستجوی کتاب یا نویسنده...',
@@ -33,6 +38,11 @@
       'nav.tools': 'Reading Tools 🐾',
       'nav.settings': 'Settings 🐾',
       'nav.profile': 'Profile 🐾',
+      'nav.now': 'Now 🐾',
+      'nav.notes': 'Notes 🐾',
+      'nav.quotes': 'Quotes 🐾',
+      'nav.stats': 'Stats 🐾',
+      'nav.friends': 'Friends 🐾',
 
       'dash.title': 'Dashboard',
       'dash.searchPlaceholder': 'Search book or author...',
