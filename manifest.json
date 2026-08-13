@@ -17,7 +17,7 @@
     "service_worker": "background.js"
   },
   "chrome_url_overrides": {
-    "newtab": "dashboard/newtab.html"
+    "newtab": "dashboard/dashboard.html"
   },
   "action": {
     "default_title": "باز کردن میو بوک",
