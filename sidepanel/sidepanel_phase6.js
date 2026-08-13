@@ -54,21 +54,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const wordsList     = document.getElementById('words-list');
     const wordsEmpty    = document.getElementById('words-empty');
     const exportWordsBtn = document.getElementById('export-words-btn');
+    const wordsSearch    = document.getElementById('words-search');
+    let allWords = [];
 
     function loadWords() {
         chrome.storage.local.get(['wordBank'], result => {
-            const words = result.wordBank || [];
-            if (words.length === 0) {
+            allWords = result.wordBank || [];
+            if (allWords.length === 0) {
+                if (wordsSearch) wordsSearch.classList.add('hidden');
                 wordsEmpty.classList.remove('hidden');
                 wordsList.classList.add('hidden');
                 if (exportWordsBtn) exportWordsBtn.classList.add('hidden');
             } else {
-                wordsEmpty.classList.add('hidden');
-                wordsList.classList.remove('hidden');
+                if (wordsSearch) wordsSearch.classList.remove('hidden');
                 if (exportWordsBtn) exportWordsBtn.classList.remove('hidden');
-                renderWords(words);
+                applyWordsFilter();
             }
         });
+    }
+
+    function applyWordsFilter() {
+        const query = wordsSearch ? wordsSearch.value.trim().toLowerCase() : '';
+        const filtered = query
+            ? allWords.filter(w =>
+                (w.term && w.term.toLowerCase().includes(query)) ||
+                (w.meaning && w.meaning.toLowerCase().includes(query)))
+            : allWords;
+
+        if (filtered.length === 0) {
+            wordsEmpty.classList.remove('hidden');
+            wordsEmpty.querySelector('p').innerText = query ? 'میو! نتیجه‌ای برای این جستجو پیدا نشد.' : 'میو! هنوز لغتی ذخیره نشده است.';
+            wordsList.classList.add('hidden');
+        } else {
+            wordsEmpty.classList.add('hidden');
+            wordsList.classList.remove('hidden');
+            renderWords(filtered);
+        }
+    }
+
+    if (wordsSearch) {
+        wordsSearch.addEventListener('input', applyWordsFilter);
     }
 
     function renderWords(words) {
@@ -83,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${w.meaning ? `<div class="word-card-meaning">${escapeHtml(w.meaning)}</div>` : ''}
                 <div class="word-card-footer">
                     <span>${dateStr}</span>
-                    <span class="action-link delete" data-id="${w.id}" style="cursor:pointer;">حذف</span>
+                    <span class="action-link delete" data-id="${w.id}">حذف</span>
                 </div>
             `;
             card.querySelector('[data-id]').addEventListener('click', () => deleteWord(w.id));

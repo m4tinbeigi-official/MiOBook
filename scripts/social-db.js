@@ -383,3 +383,141 @@ async function fetchSocialStatuses() {
     return [];
   }
 }
+
+// --- Book metadata (publisher/summary/cover), always cached server-side ---
+async function getBookInfo(title, author) {
+  try {
+    const url = `${CUSTOM_SERVER_URL}/api/book-info?title=${encodeURIComponent(title || '')}&author=${encodeURIComponent(author || '')}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch book info error:", err);
+    return null;
+  }
+}
+
+// --- Onboarding taste-wizard preferences, stored server-side per account ---
+async function getPreferences() {
+  const idToken = await getAuthToken();
+  if (!idToken) return null;
+
+  try {
+    const res = await fetch(`${CUSTOM_SERVER_URL}/api/preferences`, {
+      headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch preferences error:", err);
+    return null;
+  }
+}
+
+async function savePreferences(prefs) {
+  const idToken = await getAuthToken();
+  if (!idToken) throw new Error("برای ذخیره سلیقه مطالعه باید وارد حساب کاربری شوید.");
+
+  const res = await fetch(`${CUSTOM_SERVER_URL}/api/preferences`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
+    },
+    body: JSON.stringify(prefs)
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "خطا در ذخیره سلیقه مطالعه.");
+  return data;
+}
+
+// --- Server-side library (single source of truth for the user's books) ---
+async function fetchServerLibrary() {
+  const idToken = await getAuthToken();
+  if (!idToken) return [];
+
+  try {
+    const res = await fetch(`${CUSTOM_SERVER_URL}/api/library`, {
+      headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch server library error:", err);
+    return [];
+  }
+}
+
+async function addServerLibraryBook(book) {
+  const idToken = await getAuthToken();
+  if (!idToken) throw new Error("برای افزودن کتاب به کتابخانه ابری باید وارد حساب کاربری شوید.");
+
+  const res = await fetch(`${CUSTOM_SERVER_URL}/api/library`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
+    },
+    body: JSON.stringify(book)
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "خطا در افزودن کتاب.");
+  return data;
+}
+
+async function updateServerLibraryBook(id, changes) {
+  const idToken = await getAuthToken();
+  if (!idToken) return null;
+
+  try {
+    const res = await fetch(`${CUSTOM_SERVER_URL}/api/library/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify(changes)
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error("Update server library book error:", err);
+    return null;
+  }
+}
+
+async function deleteServerLibraryBook(id) {
+  const idToken = await getAuthToken();
+  if (!idToken) return null;
+
+  try {
+    const res = await fetch(`${CUSTOM_SERVER_URL}/api/library/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error("Delete server library book error:", err);
+    return null;
+  }
+}
+
+// --- Personal reading "story" (Wrapped-style) built from real server-side data ---
+async function fetchReadingStory() {
+  const idToken = await getAuthToken();
+  if (!idToken) return null;
+
+  try {
+    const res = await fetch(`${CUSTOM_SERVER_URL}/api/story`, {
+      headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch reading story error:", err);
+    return null;
+  }
+}

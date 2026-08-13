@@ -92,10 +92,114 @@ let dbReady = db.execute(`
     expiresAt INTEGER
   )
 `)).then(() => db.execute(`
+  CREATE TABLE IF NOT EXISTS book_metadata (
+    cacheKey TEXT PRIMARY KEY,
+    title TEXT,
+    author TEXT,
+    publisher TEXT,
+    summary TEXT,
+    coverUrl TEXT,
+    source TEXT,
+    updatedAt INTEGER
+  )
+`)).then(() => db.execute(`
+  CREATE TABLE IF NOT EXISTS user_preferences (
+    uid TEXT PRIMARY KEY,
+    genres TEXT,
+    pace TEXT,
+    goal TEXT,
+    discovery TEXT,
+    completedAt INTEGER,
+    updatedAt INTEGER
+  )
+`)).then(() => db.execute(`
+  CREATE TABLE IF NOT EXISTS library_books (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid TEXT,
+    title TEXT,
+    author TEXT,
+    publisher TEXT,
+    summary TEXT,
+    coverUrl TEXT,
+    totalPages INTEGER DEFAULT 0,
+    currentPage INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'toRead',
+    addedAt INTEGER,
+    updatedAt INTEGER
+  )
+`)).then(() => db.execute(`
   ALTER TABLE users ADD COLUMN phone TEXT
 `).catch(() => {})).catch((err) => {
   console.error('Error initializing database:', err.message);
 });
+
+// Normalize a title/author pair into a stable cache key for book_metadata
+function bookCacheKey(title, author) {
+  const norm = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+  return `${norm(title)}::${norm(author)}`;
+}
+
+// Look up (and cache) publisher/summary/cover info for a book via Google Books
+async function getOrFetchBookInfo(title, author) {
+  const cacheKey = bookCacheKey(title, author);
+  await dbReady;
+
+  const cached = await db.execute({
+    sql: `SELECT * FROM book_metadata WHERE cacheKey = ?`,
+    args: [cacheKey]
+  });
+
+  if (cached.rows.length > 0) {
+    const row = cached.rows[0];
+    return {
+      title: row.title,
+      author: row.author,
+      publisher: row.publisher,
+      summary: row.summary,
+      coverUrl: row.coverUrl,
+      source: row.source
+    };
+  }
+
+  let info = { title: title || '', author: author || '', publisher: '', summary: '', coverUrl: '', source: 'none' };
+
+  try {
+    const q = encodeURIComponent(`intitle:${title || ''}${author ? ' inauthor:' + author : ''}`);
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
+    if (response.ok) {
+      const data = await response.json();
+      const item = data.items && data.items[0];
+      if (item && item.volumeInfo) {
+        const vi = item.volumeInfo;
+        info = {
+          title: vi.title || title || '',
+          author: (vi.authors && vi.authors.join('، ')) || author || '',
+          publisher: vi.publisher || '',
+          summary: vi.description || '',
+          coverUrl: (vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail)) || '',
+          source: 'google_books'
+        };
+      }
+    }
+  } catch (err) {
+    console.error('Google Books lookup error:', err.message);
+  }
+
+  try {
+    await db.execute({
+      sql: `INSERT INTO book_metadata (cacheKey, title, author, publisher, summary, coverUrl, source, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(cacheKey) DO UPDATE SET
+              title = excluded.title, author = excluded.author, publisher = excluded.publisher,
+              summary = excluded.summary, coverUrl = excluded.coverUrl, source = excluded.source, updatedAt = excluded.updatedAt`,
+      args: [cacheKey, info.title, info.author, info.publisher, info.summary, info.coverUrl, info.source, Date.now()]
+    });
+  } catch (err) {
+    console.error('book_metadata cache write error:', err.message);
+  }
+
+  return info;
+}
 
 // Send an OTP SMS via the sms.ir "Fast Login / Verify" API
 async function sendOtpSms(phone, code) {
@@ -591,6 +695,235 @@ app.delete('/api/friends/:friendUid', verifyGoogleToken, async (req, res) => {
   } catch (err) {
     console.error('Database error:', err.message);
     res.status(500).json({ error: 'خطا در حذف دوست.' });
+  }
+});
+
+// 12. Get book info (publisher, summary, cover) — public, cached server-side
+app.get('/api/book-info', async (req, res) => {
+  const { title, author } = req.query;
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'عنوان کتاب الزامی است.' });
+  }
+
+  try {
+    const info = await getOrFetchBookInfo(title.trim(), (author || '').trim());
+    res.json(info);
+  } catch (err) {
+    console.error('book-info error:', err.message);
+    res.status(500).json({ error: 'خطا در دریافت اطلاعات کتاب.' });
+  }
+});
+
+// 13. Get current user's taste preferences (Authenticated)
+app.get('/api/preferences', verifyGoogleToken, async (req, res) => {
+  const { uid } = req.user;
+
+  try {
+    await dbReady;
+    const result = await db.execute({
+      sql: `SELECT * FROM user_preferences WHERE uid = ?`,
+      args: [uid]
+    });
+
+    if (result.rows.length === 0) {
+      return res.json(null);
+    }
+
+    const row = result.rows[0];
+    res.json({
+      genres: row.genres ? JSON.parse(row.genres) : [],
+      pace: row.pace || '',
+      goal: row.goal || '',
+      discovery: row.discovery || '',
+      completedAt: row.completedAt || null
+    });
+  } catch (err) {
+    console.error('Database query error:', err.message);
+    res.status(500).json({ error: 'خطا در دریافت سلیقه مطالعه.' });
+  }
+});
+
+// 14. Save current user's taste preferences from the onboarding wizard (Authenticated)
+app.post('/api/preferences', verifyGoogleToken, async (req, res) => {
+  const { uid } = req.user;
+  const { genres, pace, goal, discovery } = req.body;
+  const now = Date.now();
+
+  try {
+    await dbReady;
+    await db.execute({
+      sql: `INSERT INTO user_preferences (uid, genres, pace, goal, discovery, completedAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(uid) DO UPDATE SET
+              genres = excluded.genres, pace = excluded.pace, goal = excluded.goal,
+              discovery = excluded.discovery, completedAt = excluded.completedAt, updatedAt = excluded.updatedAt`,
+      args: [uid, JSON.stringify(genres || []), pace || '', goal || '', discovery || '', now, now]
+    });
+    res.json({ success: true, message: 'سلیقه مطالعه با موفقیت ذخیره شد.' });
+  } catch (err) {
+    console.error('Database insert error:', err.message);
+    res.status(500).json({ error: 'خطا در ذخیره سلیقه مطالعه.' });
+  }
+});
+
+// 15. Get current user's full library, stored server-side (Authenticated)
+app.get('/api/library', verifyGoogleToken, async (req, res) => {
+  const { uid } = req.user;
+
+  try {
+    await dbReady;
+    const result = await db.execute({
+      sql: `SELECT * FROM library_books WHERE uid = ? ORDER BY updatedAt DESC`,
+      args: [uid]
+    });
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Database query error:', err.message);
+    res.status(500).json({ error: 'خطا در دریافت کتابخانه.' });
+  }
+});
+
+// 16. Add a book to the server-side library (Authenticated) — enriches publisher/summary automatically
+app.post('/api/library', verifyGoogleToken, async (req, res) => {
+  const { uid } = req.user;
+  const { title, author, coverUrl, totalPages, currentPage, status } = req.body;
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'عنوان کتاب الزامی است.' });
+  }
+
+  try {
+    const info = await getOrFetchBookInfo(title.trim(), (author || '').trim());
+    const now = Date.now();
+
+    await dbReady;
+    const result = await db.execute({
+      sql: `INSERT INTO library_books
+              (uid, title, author, publisher, summary, coverUrl, totalPages, currentPage, status, addedAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        uid,
+        title.trim(),
+        (author || '').trim(),
+        info.publisher || '',
+        info.summary || '',
+        coverUrl || info.coverUrl || '',
+        totalPages || 0,
+        currentPage || 0,
+        status || 'toRead',
+        now,
+        now
+      ]
+    });
+
+    res.json({
+      id: Number(result.lastInsertRowid),
+      uid, title: title.trim(), author: (author || '').trim(),
+      publisher: info.publisher || '', summary: info.summary || '',
+      coverUrl: coverUrl || info.coverUrl || '',
+      totalPages: totalPages || 0, currentPage: currentPage || 0,
+      status: status || 'toRead', addedAt: now, updatedAt: now
+    });
+  } catch (err) {
+    console.error('Database insert error:', err.message);
+    res.status(500).json({ error: 'خطا در افزودن کتاب به کتابخانه.' });
+  }
+});
+
+// 17. Update a server-side library book's progress/status (Authenticated)
+app.put('/api/library/:id', verifyGoogleToken, async (req, res) => {
+  const { uid } = req.user;
+  const { id } = req.params;
+  const { currentPage, totalPages, status } = req.body;
+
+  try {
+    await dbReady;
+    const existing = await db.execute({
+      sql: `SELECT id FROM library_books WHERE id = ? AND uid = ?`,
+      args: [id, uid]
+    });
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'کتاب یافت نشد.' });
+    }
+
+    await db.execute({
+      sql: `UPDATE library_books SET
+              currentPage = COALESCE(?, currentPage),
+              totalPages = COALESCE(?, totalPages),
+              status = COALESCE(?, status),
+              updatedAt = ?
+            WHERE id = ? AND uid = ?`,
+      args: [currentPage ?? null, totalPages ?? null, status || null, Date.now(), id, uid]
+    });
+
+    res.json({ success: true, message: 'کتاب به‌روزرسانی شد.' });
+  } catch (err) {
+    console.error('Database update error:', err.message);
+    res.status(500).json({ error: 'خطا در به‌روزرسانی کتاب.' });
+  }
+});
+
+// 18. Delete a server-side library book (Authenticated)
+app.delete('/api/library/:id', verifyGoogleToken, async (req, res) => {
+  const { uid } = req.user;
+  const { id } = req.params;
+
+  try {
+    await dbReady;
+    await db.execute({ sql: `DELETE FROM library_books WHERE id = ? AND uid = ?`, args: [id, uid] });
+    res.json({ success: true, message: 'کتاب حذف شد.' });
+  } catch (err) {
+    console.error('Database delete error:', err.message);
+    res.status(500).json({ error: 'خطا در حذف کتاب.' });
+  }
+});
+
+// 19. Build a personal "reading story" summary card from the user's real server-side data (Authenticated)
+app.get('/api/story', verifyGoogleToken, async (req, res) => {
+  const { uid, displayName, photoUrl } = req.user;
+
+  try {
+    await dbReady;
+
+    const library = await db.execute({
+      sql: `SELECT title, author, status, totalPages, currentPage FROM library_books WHERE uid = ?`,
+      args: [uid]
+    });
+
+    const prefsResult = await db.execute({
+      sql: `SELECT genres FROM user_preferences WHERE uid = ?`,
+      args: [uid]
+    });
+
+    const pomodoroResult = await db.execute({
+      sql: `SELECT COALESCE(SUM(durationMinutes), 0) AS totalMinutes, COUNT(*) AS sessionCount FROM pomodoro_sessions WHERE uid = ?`,
+      args: [uid]
+    });
+
+    const read = library.rows.filter(r => r.status === 'read');
+    const reading = library.rows.filter(r => r.status === 'reading');
+    const toRead = library.rows.filter(r => r.status === 'toRead');
+
+    const pagesRead = read.reduce((sum, r) => sum + (r.totalPages || 0), 0)
+      + reading.reduce((sum, r) => sum + (r.currentPage || 0), 0);
+
+    res.json({
+      displayName,
+      photoUrl,
+      totalBooks: library.rows.length,
+      read: read.map(r => ({ title: r.title, author: r.author })),
+      reading: reading.map(r => ({ title: r.title, author: r.author })),
+      toRead: toRead.map(r => ({ title: r.title, author: r.author })),
+      pagesRead,
+      genres: prefsResult.rows[0] && prefsResult.rows[0].genres ? JSON.parse(prefsResult.rows[0].genres) : [],
+      pomodoroMinutes: (pomodoroResult.rows[0] && pomodoroResult.rows[0].totalMinutes) || 0,
+      pomodoroSessions: (pomodoroResult.rows[0] && pomodoroResult.rows[0].sessionCount) || 0
+    });
+  } catch (err) {
+    console.error('Database query error:', err.message);
+    res.status(500).json({ error: 'خطا در ساخت استوری.' });
   }
 });
 

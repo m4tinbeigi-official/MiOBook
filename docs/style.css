@@ -106,19 +106,13 @@ body {
 }
 
 .logo {
-    font-size: 1.5rem;
-    font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: linear-gradient(to right, #a855f7, #ec4899);
-    -webkit-background-clip: text;
-    color: transparent;
 }
 
-.emoji {
-    font-size: 1.5rem;
-    color: white;
+.logo-img {
+    height: 36px;
+    width: auto;
 }
 
 nav {

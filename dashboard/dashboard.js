@@ -3,7 +3,6 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
     // --- 1. Themes & Appearance ---
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const themes = ['light', 'sepia', 'moss', 'dark'];
     let currentTheme = 'light';
 
@@ -21,15 +20,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Failed to load theme:", err);
     }
 
-    // Toggle theme button
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', async () => {
+    async function setTheme(theme) {
+        currentTheme = theme;
+        applyTheme(currentTheme);
+        await chrome.storage.local.set({ theme: currentTheme });
+    }
+
+    // Header quick-toggle: cycles through the 4 themes
+    const modeToggleBtnEarly = document.getElementById('mode-toggle-btn');
+    if (modeToggleBtnEarly) {
+        modeToggleBtnEarly.addEventListener('click', () => {
             const nextIndex = (themes.indexOf(currentTheme) + 1) % themes.length;
-            currentTheme = themes[nextIndex];
-            applyTheme(currentTheme);
-            await chrome.storage.local.set({ theme: currentTheme });
+            setTheme(themes[nextIndex]);
         });
     }
+
+    // Settings page: pick an exact theme
+    document.querySelectorAll('.settings-theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => setTheme(btn.dataset.themeChoice));
+    });
 
     // Theme sync listener across windows
     chrome.storage.onChanged.addListener((changes, area) => {
@@ -78,15 +87,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        const themeNames = {
-            light: 'روشن',
-            sepia: 'کاغذی (سپیا)',
-            moss: 'جنگل',
-            dark: 'تاریک'
-        };
-        if (themeToggleBtn) {
-            themeToggleBtn.querySelector('span').innerText = `تم فعلی: ${themeNames[theme] || theme}`;
-        }
+        document.querySelectorAll('.settings-theme-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.themeChoice === theme);
+        });
     }
 
 
@@ -338,10 +341,89 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Profile widget stats (books read / reading / total) driven by real local library data.
+    function updateProfileWidgetStats(books) {
+        const readingEl = document.getElementById('pw-stat-reading');
+        const readEl = document.getElementById('pw-stat-read');
+        const totalEl = document.getElementById('pw-stat-total');
+        if (readingEl) readingEl.innerText = books.filter(b => b.status === 'reading').length.toLocaleString('fa-IR');
+        if (readEl) readEl.innerText = books.filter(b => b.status === 'read').length.toLocaleString('fa-IR');
+        if (totalEl) totalEl.innerText = books.length.toLocaleString('fa-IR');
+    }
+
+    // Hero "الان داری چی می‌خونی؟" card — the single most prominent book,
+    // driven by real library data instead of the static mock it shipped with.
+    function renderHeroReadingCard(books) {
+        const heroCard = document.getElementById('hero-reading-card');
+        if (!heroCard) return;
+
+        chrome.storage.local.get(['pomodoroSelectedBookId'], (result) => {
+            const readingBooks = books.filter(b => b.status === 'reading');
+            let book = readingBooks.find(b => b.id === result.pomodoroSelectedBookId);
+            if (!book) {
+                book = readingBooks.slice().sort((a, b) => b.addedAt - a.addedAt)[0];
+            }
+
+            const heroInfoEl = heroCard.querySelector('.hero-info');
+            const heroCoverEl = document.getElementById('hero-book-cover');
+            let heroEmptyEl = document.getElementById('hero-empty-state');
+
+            if (!book) {
+                if (heroInfoEl) heroInfoEl.classList.add('hidden');
+                if (heroCoverEl) heroCoverEl.classList.add('hidden');
+                if (!heroEmptyEl) {
+                    heroEmptyEl = document.createElement('div');
+                    heroEmptyEl.id = 'hero-empty-state';
+                    heroEmptyEl.className = 'hero-empty-state';
+                    heroEmptyEl.innerHTML = `
+                        <span class="hero-empty-icon">🐾📖</span>
+                        <strong>هنوز کتابی رو شروع نکرده‌ای</strong>
+                        <span>یک کتاب از کتابخانه‌ات رو به «در حال مطالعه» ببر تا اینجا ببینیش.</span>
+                    `;
+                    heroCard.appendChild(heroEmptyEl);
+                }
+                heroEmptyEl.classList.remove('hidden');
+                return;
+            }
+
+            if (heroEmptyEl) heroEmptyEl.classList.add('hidden');
+            if (heroInfoEl) heroInfoEl.classList.remove('hidden');
+            if (heroCoverEl) heroCoverEl.classList.remove('hidden');
+
+            const progress = book.totalPages > 0 ? Math.round((book.currentPage / book.totalPages) * 100) : 0;
+            const progressPct = Math.min(Math.max(progress, 0), 100);
+            const remainingPages = Math.max((book.totalPages || 0) - (book.currentPage || 0), 0);
+
+            const titleEl = document.getElementById('hero-book-title');
+            const authorEl = document.getElementById('hero-book-author');
+            const fillEl = document.getElementById('hero-progress-fill');
+            const pctEl = document.getElementById('hero-progress-pct');
+            const pagesEl = document.getElementById('hero-progress-pages');
+
+            if (titleEl) titleEl.innerText = book.title;
+            if (authorEl) authorEl.innerText = book.author || 'نویسنده نامشخص';
+            if (fillEl) fillEl.style.width = `${progressPct}%`;
+            if (pctEl) pctEl.innerText = `${progressPct.toLocaleString('fa-IR')}٪`;
+            if (pagesEl) pagesEl.innerText = `صفحه ${(book.currentPage || 0).toLocaleString('fa-IR')} از ${(book.totalPages || 0).toLocaleString('fa-IR')}`;
+
+            if (heroCoverEl) {
+                const spineStyle = getSpineColor(book.title);
+                heroCoverEl.style.backgroundImage = book.coverUrl ? `url(${book.coverUrl})` : spineStyle.bg;
+            }
+
+            const chipAddedEl = document.getElementById('hero-chip-added');
+            const chipRemainingEl = document.getElementById('hero-chip-remaining');
+            if (chipAddedEl) chipAddedEl.innerText = getRelativeTime(book.addedAt);
+            if (chipRemainingEl) chipRemainingEl.innerText = `${remainingPages.toLocaleString('fa-IR')} صفحه`;
+        });
+    }
+
     function loadBookshelf() {
         chrome.storage.local.get(['books'], (result) => {
             const books = result.books || [];
-            
+            updateProfileWidgetStats(books);
+            renderHeroReadingCard(books);
+
             // Filter books for library section
             let libraryBooks = books;
             if (activeFilter !== 'all') {
@@ -440,14 +522,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const spineStyle = getSpineColor(book.title);
             const coverBg = book.coverUrl ? `url(${book.coverUrl})` : spineStyle.bg;
+            const progress = book.totalPages > 0 ? Math.round((book.currentPage / book.totalPages) * 100) : 0;
+            const progressPct = Math.min(Math.max(progress, 0), 100);
+            const statusLabels = { reading: 'در حال مطالعه', read: 'خوانده‌شده', toRead: 'می‌خواهم بخوانم' };
+            const statusLabel = statusLabels[book.status] || '';
 
             card.innerHTML = `
-                <div class="bc-cover" style="background: ${coverBg};"></div>
-                <div class="bc-info">
-                    <div class="bc-info-cover" style="background: ${coverBg};"></div>
-                    <h3 class="bc-title">${escapeHtml(book.title)}</h3>
-                    <p class="bc-author">${escapeHtml(book.author || 'نویسنده نامشخص')}</p>
-                    <div class="bc-stars">★★★★★</div>
+                <div class="bc-cover" style="background: ${coverBg};" title="${escapeHtml(statusLabel)}">
+                    <span class="bc-status-dot ${book.status}"></span>
+                    <div class="bc-cover-progress"><div class="bc-cover-progress-fill" style="width: ${progressPct}%;"></div></div>
+                </div>
+                <h3 class="bc-title">${escapeHtml(book.title)}</h3>
+                <div class="bc-meta">
+                    <span class="bc-pct">${progressPct}٪</span>
+                    <span>${escapeHtml(statusLabel)}</span>
                 </div>
             `;
 
@@ -613,7 +701,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Bookstore comparison check
         loadBookstoreComparison(book);
 
+        loadBookSummary(book);
+
         bookDetailsModal.classList.remove('hidden');
+    }
+
+    // Show the author/publisher/synopsis for a book, always fetched (and
+    // cached) via the server so it doesn't rely on any local storage.
+    function loadBookSummary(book) {
+        const section = document.getElementById('details-book-summary-section');
+        const textEl = document.getElementById('details-book-summary-text');
+        const publisherEl = document.getElementById('details-book-publisher');
+        const loadingEl = document.getElementById('details-book-summary-loading');
+
+        if (!section || !textEl) return;
+
+        section.classList.add('hidden');
+        if (publisherEl) publisherEl.classList.add('hidden');
+
+        const render = (info) => {
+            if (activeBook !== book) return; // user moved to another book while this was loading
+            if (loadingEl) loadingEl.classList.add('hidden');
+
+            if (info && info.summary) {
+                textEl.innerText = info.summary;
+                section.classList.remove('hidden');
+            }
+            if (info && info.publisher && publisherEl) {
+                publisherEl.innerText = `ناشر: ${info.publisher}`;
+                publisherEl.classList.remove('hidden');
+            }
+        };
+
+        if (book.summary || book.publisher) {
+            if (loadingEl) loadingEl.classList.add('hidden');
+            render({ summary: book.summary, publisher: book.publisher });
+            return;
+        }
+
+        if (loadingEl) loadingEl.classList.remove('hidden');
+
+        if (typeof getBookInfo !== 'function') {
+            if (loadingEl) loadingEl.classList.add('hidden');
+            return;
+        }
+
+        getBookInfo(book.title, book.author).then(info => {
+            if (!info) return;
+            // Cache on the local book record so we don't re-fetch every time.
+            chrome.storage.local.get(['books'], (result) => {
+                const list = result.books || [];
+                const target = list.find(b => b.id === book.id);
+                if (target) {
+                    target.summary = info.summary || '';
+                    target.publisher = info.publisher || '';
+                    chrome.storage.local.set({ books: list });
+                }
+            });
+            render(info);
+        }).catch(() => {
+            if (loadingEl) loadingEl.classList.add('hidden');
+        });
     }
 
     if (closeDetailsModalBtn) {
@@ -642,12 +790,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            const wasToRead = activeBook.status === 'toRead';
+
             chrome.storage.local.get(['books'], (result) => {
                 const list = result.books || [];
                 const idx = list.findIndex(b => b.id === activeBook.id);
                 if (idx !== -1) {
                     list[idx].currentPage = newPage;
-                    
+
                     if (newPage === activeBook.totalPages && activeBook.totalPages > 0) {
                         list[idx].status = 'read';
                         list[idx].completedAt = Date.now();
@@ -660,14 +810,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                      chrome.storage.local.set({ books: list }, () => {
                         // Sync with Server/Firestore if user is authenticated
-                        chrome.storage.local.get(['auth', 'activeReadingBook'], (res) => {
+                        chrome.storage.local.get(['auth', 'activeReadingBook', 'privacyDefaultShare'], (res) => {
                             if (res.auth) {
-                                const isActive = res.activeReadingBook && res.activeReadingBook.id === activeBook.id;
-                                if (isActive) {
+                                let isActive = res.activeReadingBook && res.activeReadingBook.id === activeBook.id;
+                                const updatedStatus = newPage === activeBook.totalPages ? 'read' : 'reading';
+
+                                // Just started this book: honor the "share by default" setting
+                                // from the Settings tab instead of requiring a manual broadcast click.
+                                const justStartedReading = wasToRead && updatedStatus === 'reading';
+                                if (justStartedReading && !isActive && res.privacyDefaultShare !== false) {
+                                    isActive = true;
+                                    chrome.storage.local.set({ activeReadingBook: {
+                                        id: activeBook.id, title: activeBook.title, author: activeBook.author,
+                                        currentPage: newPage, totalPages: activeBook.totalPages
+                                    } });
+                                } else if (isActive) {
                                     res.activeReadingBook.currentPage = newPage;
                                     chrome.storage.local.set({ activeReadingBook: res.activeReadingBook });
                                 }
-                                const updatedStatus = newPage === activeBook.totalPages ? 'read' : 'reading';
+
                                 publishReadingStatus(activeBook.title, activeBook.author, newPage, activeBook.totalPages, updatedStatus, isActive);
                             }
                         });
@@ -676,6 +837,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         loadBookshelf();
                         loadGoals();
                         renderCharts();
+                        syncBookToServer(list[idx]);
                         activeBook = null;
                     });
                 }
@@ -731,12 +893,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             chrome.storage.local.get(['books'], (result) => {
                 const list = result.books || [];
+                const removed = list.find(b => b.id === activeBook.id);
                 const updated = list.filter(b => b.id !== activeBook.id);
                 chrome.storage.local.set({ books: updated }, () => {
                     bookDetailsModal.classList.add('hidden');
                     loadBookshelf();
                     loadGoals();
                     renderCharts();
+                    if (removed && removed.serverId && typeof deleteServerLibraryBook === 'function') {
+                        deleteServerLibraryBook(removed.serverId);
+                    }
                     activeBook = null;
                 });
             });
@@ -820,8 +986,57 @@ document.addEventListener('DOMContentLoaded', async () => {
                     loadBookshelf();
                     loadGoals();
                     renderCharts();
+                    syncBookToServer(newBook);
                 });
             });
+        });
+    }
+
+    // Mirror a locally-added/updated book to the always-on server library so
+    // it's never only on-device. Fire-and-forget: local storage stays the
+    // fast operational copy, the server call just keeps it backed up.
+    function syncBookToServer(book) {
+        if (typeof isConfigured !== 'function' || !isConfigured()) return;
+
+        if (book.serverId) {
+            updateServerLibraryBook(book.serverId, {
+                currentPage: book.currentPage,
+                totalPages: book.totalPages,
+                status: book.status
+            });
+            return;
+        }
+
+        addServerLibraryBook({
+            title: book.title,
+            author: book.author,
+            coverUrl: book.coverUrl,
+            totalPages: book.totalPages,
+            currentPage: book.currentPage,
+            status: book.status
+        }).then(saved => {
+            if (!saved || !saved.id) return;
+            chrome.storage.local.get(['books'], (result) => {
+                const list = result.books || [];
+                const target = list.find(b => b.id === book.id);
+                if (target) {
+                    target.serverId = saved.id;
+                    target.publisher = saved.publisher || target.publisher || '';
+                    target.summary = saved.summary || target.summary || '';
+                    chrome.storage.local.set({ books: list });
+                }
+            });
+        }).catch(err => console.error('Library server sync error:', err));
+    }
+
+    // Right after a fresh login, push every book that only exists locally
+    // (added while signed out, or before this feature existed) up to the
+    // server so the server library is always the complete, current copy.
+    function syncAllLocalBooksToServer() {
+        if (typeof isConfigured !== 'function' || !isConfigured()) return;
+        chrome.storage.local.get(['books'], (result) => {
+            const list = result.books || [];
+            list.filter(b => !b.serverId).forEach(b => syncBookToServer(b));
         });
     }
 
@@ -833,7 +1048,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let searchDebounceTimer = null;
 
+    // --- Command palette: Ctrl+K / Cmd+K focuses search; an empty, focused
+    // search box shows quick actions instead of book results. ---
+    const COMMAND_PALETTE_ACTIONS = [
+        { icon: '➕', label: 'افزودن کتاب', run: () => document.getElementById('add-book-btn')?.click() },
+        { icon: '🍅', label: 'شروع پومودورو', run: () => document.getElementById('pomodoro-toggle-btn')?.click() },
+        { icon: '📚', label: 'رفتن به کتابخانه', run: () => document.querySelector('.nav-item[data-tab="library"]')?.click() },
+        { icon: '📝', label: 'یادداشت جدید', run: () => {
+            document.querySelector('.nav-item[data-tab="dashboard"]')?.click();
+            const noteInput = document.getElementById('quick-note-input');
+            if (noteInput) { noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); noteInput.focus(); }
+        } }
+    ];
+
+    function renderCommandPaletteActions() {
+        if (!searchResultsList) return;
+        searchResultsList.innerHTML = COMMAND_PALETTE_ACTIONS.map((action, i) => `
+            <div class="search-result-item command-action-item" data-action-index="${i}">
+                <span style="font-size: 18px;">${action.icon}</span>
+                <div class="search-result-info"><span class="search-result-title">${escapeHtml(action.label)}</span></div>
+            </div>
+        `).join('');
+        searchResultsList.classList.remove('hidden');
+        searchResultsList.querySelectorAll('.command-action-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const action = COMMAND_PALETTE_ACTIONS[parseInt(el.dataset.actionIndex, 10)];
+                searchResultsList.classList.add('hidden');
+                if (searchInput) searchInput.value = '';
+                if (action) action.run();
+            });
+        });
+    }
+
     if (searchInput) {
+        window.addEventListener('keydown', (e) => {
+            const isCmdK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
+            if (isCmdK) {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+                if (!searchInput.value.trim()) renderCommandPaletteActions();
+            } else if (e.key === 'Escape' && document.activeElement === searchInput) {
+                searchInput.blur();
+                if (searchResultsList) searchResultsList.classList.add('hidden');
+            }
+        });
+
+        searchInput.addEventListener('focus', () => {
+            if (!searchInput.value.trim()) renderCommandPaletteActions();
+        });
+
         // Trigger search on Enter keypress
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -853,10 +1117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const query = searchInput.value.trim();
 
             if (!query) {
-                if (searchResultsList) {
-                    searchResultsList.innerHTML = '';
-                    searchResultsList.classList.add('hidden');
-                }
+                renderCommandPaletteActions();
                 return;
             }
 
@@ -1537,14 +1798,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     chrome.storage.local.get(['books'], (result) => {
                         const existingList = result.books || [];
                         let addedCount = 0;
+                        const newlyAdded = [];
 
                         parsedBooks.forEach(newB => {
-                            const duplicate = existingList.find(b => 
+                            const duplicate = existingList.find(b =>
                                 b.title.toLowerCase() === newB.title.toLowerCase() &&
                                 b.author.toLowerCase() === newB.author.toLowerCase()
                             );
                             if (!duplicate) {
                                 existingList.push(newB);
+                                newlyAdded.push(newB);
                                 addedCount++;
                             }
                         });
@@ -1557,6 +1820,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             loadBookshelf();
                             loadGoals();
                             renderCharts();
+                            newlyAdded.forEach(b => syncBookToServer(b));
                         });
                     });
                 } catch (err) {
@@ -1696,8 +1960,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const targetTab = item.getAttribute('data-tab');
-            if (!targetTab) return; 
-            if (targetTab === 'settings') return; 
+            if (!targetTab) return;
 
             // Set active class
             navItems.forEach(nav => nav.classList.remove('active'));
@@ -1724,14 +1987,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     explore: 'Explore Community',
                     wishlist: 'Wishlist',
                     tools: 'Reading Tools',
-                    profile: 'User Profile'
+                    profile: 'User Profile',
+                    settings: 'Settings'
                 } : {
                     dashboard: 'داشبورد',
                     library: 'کتابخانه من',
                     explore: 'کاوش جامعه',
                     wishlist: 'لیست علاقه‌مندی‌ها',
                     tools: 'ابزارهای مطالعه',
-                    profile: 'پروفایل کاربری'
+                    profile: 'پروفایل کاربری',
+                    settings: 'تنظیمات'
                 };
                 pageTitleHeader.innerText = titles[targetTab] || 'میو بوک';
             }
@@ -1740,6 +2005,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 loadCommunityFeed();
             } else if (targetTab === 'profile') {
                 renderProfileView();
+            } else if (targetTab === 'settings') {
+                window.renderSettingsView();
             }
         });
     });
@@ -1760,8 +2027,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const auth = await loginWithGoogle();
                 profileLoginBtn.innerText = 'ورود با اکانت گوگل (Gmail)';
                 profileLoginBtn.disabled = false;
-                
+
                 renderProfileView();
+                syncAllLocalBooksToServer();
+                maybeShowTasteWizard();
                 alert(`خوش آمدید، ${auth.displayName}!`);
             } catch (err) {
                 console.error("Login failed:", err);
@@ -1772,6 +2041,78 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (errorMsg) {
                     errorMsg.innerText = `خطا در ورود: ${err.message || 'مشکلی پیش آمد.'}`;
                 }
+            }
+        });
+    }
+
+    // --- Phone (OTP via sms.ir) Authentication ---
+    const phoneOtpSendBtn = document.getElementById('phone-otp-send-btn');
+    const phoneOtpVerifyBtn = document.getElementById('phone-otp-verify-btn');
+    const phoneLoginInput = document.getElementById('phone-login-input');
+    const phoneOtpInput = document.getElementById('phone-otp-input');
+    const phoneLoginStepPhone = document.getElementById('phone-login-step-phone');
+    const phoneLoginStepCode = document.getElementById('phone-login-step-code');
+    let pendingOtpPhone = null;
+
+    if (phoneOtpSendBtn) {
+        phoneOtpSendBtn.addEventListener('click', async () => {
+            const errorMsg = document.getElementById('phone-login-error-msg');
+            if (errorMsg) errorMsg.innerText = '';
+            const phone = (phoneLoginInput.value || '').trim();
+
+            if (!/^09\d{9}$/.test(phone)) {
+                if (errorMsg) errorMsg.innerText = 'شماره موبایل را به صورت صحیح وارد کنید (مثلا 09121234567).';
+                return;
+            }
+
+            try {
+                phoneOtpSendBtn.innerText = 'در حال ارسال...';
+                phoneOtpSendBtn.disabled = true;
+                await requestPhoneOtp(phone);
+                pendingOtpPhone = phone;
+                phoneLoginStepPhone.classList.add('hidden');
+                phoneLoginStepCode.classList.remove('hidden');
+                phoneOtpInput.focus();
+            } catch (err) {
+                console.error('OTP send failed:', err);
+                if (errorMsg) errorMsg.innerText = err.message || 'ارسال کد تایید ناموفق بود.';
+            } finally {
+                phoneOtpSendBtn.innerText = 'ارسال کد تایید پیامکی';
+                phoneOtpSendBtn.disabled = false;
+            }
+        });
+    }
+
+    if (phoneOtpVerifyBtn) {
+        phoneOtpVerifyBtn.addEventListener('click', async () => {
+            const errorMsg = document.getElementById('phone-login-error-msg');
+            if (errorMsg) errorMsg.innerText = '';
+            const code = (phoneOtpInput.value || '').trim();
+
+            if (!pendingOtpPhone || !code) {
+                if (errorMsg) errorMsg.innerText = 'کد تایید را وارد کنید.';
+                return;
+            }
+
+            try {
+                phoneOtpVerifyBtn.innerText = 'در حال بررسی...';
+                phoneOtpVerifyBtn.disabled = true;
+                const auth = await loginWithPhoneOtp(pendingOtpPhone, code);
+                pendingOtpPhone = null;
+                phoneLoginStepCode.classList.add('hidden');
+                phoneLoginStepPhone.classList.remove('hidden');
+                phoneLoginInput.value = '';
+                phoneOtpInput.value = '';
+                renderProfileView();
+                syncAllLocalBooksToServer();
+                maybeShowTasteWizard();
+                alert(`خوش آمدید، ${auth.displayName}!`);
+            } catch (err) {
+                console.error('OTP verify failed:', err);
+                if (errorMsg) errorMsg.innerText = err.message || 'کد تایید نامعتبر است.';
+            } finally {
+                phoneOtpVerifyBtn.innerText = 'تایید و ورود';
+                phoneOtpVerifyBtn.disabled = false;
             }
         });
     }
@@ -1792,6 +2133,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Exposed on window so the Settings tab's logout handler (a separate
+    // DOMContentLoaded closure) can refresh the profile view too.
+    window.renderProfileView = renderProfileView;
     async function renderProfileView() {
         const data = await chrome.storage.local.get(['auth']);
         const loggedIn = document.getElementById('profile-logged-in');
@@ -1802,24 +2146,290 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const hAvatarImg = document.querySelector('.profile-avatar img');
         const hAvatarName = document.querySelector('.profile-avatar span');
-        
+        const widgetName = document.getElementById('profile-widget-name');
+
         if (data.auth) {
             if (loggedIn) loggedIn.classList.remove('hidden');
             if (loggedOut) loggedOut.classList.add('hidden');
-            
+
             if (avatar) avatar.src = data.auth.photoUrl;
             if (name) name.innerText = data.auth.displayName;
             if (email) email.innerText = data.auth.email;
-            
+
             if (hAvatarImg) hAvatarImg.src = data.auth.photoUrl;
             if (hAvatarName) hAvatarName.innerText = data.auth.displayName;
+            if (widgetName) widgetName.innerText = data.auth.displayName;
         } else {
             if (loggedIn) loggedIn.classList.add('hidden');
             if (loggedOut) loggedOut.classList.remove('hidden');
-            
+
             if (hAvatarImg) hAvatarImg.src = "https://robohash.org/guest?set=set4";
             if (hAvatarName) hAvatarName.innerText = "میهمان 🐾";
+            if (widgetName) widgetName.innerText = "میهمان";
         }
+    }
+
+    // --- 16b. Onboarding Taste Wizard (answers stored on the server only) ---
+    const wizardModal = document.getElementById('taste-wizard-modal');
+    const wizardSteps = wizardModal ? Array.from(wizardModal.querySelectorAll('.wizard-step')) : [];
+    const wizardProgressFill = document.getElementById('wizard-progress-fill');
+    const wizardBackBtn = document.getElementById('wizard-back-btn');
+    const wizardNextBtn = document.getElementById('wizard-next-btn');
+    const closeWizardBtn = document.getElementById('close-wizard-btn');
+    let wizardStepIndex = 0;
+    const wizardAnswers = { genres: [], pace: '', goal: '', discovery: '' };
+
+    const WIZARD_STEP_FIELDS = [
+        { grid: 'wizard-genres-grid', key: 'genres', multi: true },
+        { grid: 'wizard-pace-grid', key: 'pace', multi: false },
+        { grid: 'wizard-goal-grid', key: 'goal', multi: false },
+        { grid: 'wizard-discovery-grid', key: 'discovery', multi: false }
+    ];
+
+    WIZARD_STEP_FIELDS.forEach(({ grid, key, multi }) => {
+        const gridEl = document.getElementById(grid);
+        if (!gridEl) return;
+        gridEl.addEventListener('click', (e) => {
+            const chip = e.target.closest('.wizard-chip');
+            if (!chip) return;
+            const value = chip.dataset.value;
+
+            if (multi) {
+                chip.classList.toggle('selected');
+                wizardAnswers[key] = Array.from(gridEl.querySelectorAll('.wizard-chip.selected')).map(c => c.dataset.value);
+            } else {
+                gridEl.querySelectorAll('.wizard-chip').forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+                wizardAnswers[key] = value;
+            }
+        });
+    });
+
+    function renderWizardStep() {
+        wizardSteps.forEach((step, i) => step.classList.toggle('hidden', i !== wizardStepIndex));
+        if (wizardProgressFill) wizardProgressFill.style.width = `${((wizardStepIndex + 1) / wizardSteps.length) * 100}%`;
+        if (wizardBackBtn) wizardBackBtn.classList.toggle('hidden', wizardStepIndex === 0);
+        if (wizardNextBtn) wizardNextBtn.innerText = wizardStepIndex === wizardSteps.length - 1 ? 'پایان و ذخیره' : 'بعدی';
+    }
+
+    function closeWizard() {
+        if (wizardModal) wizardModal.classList.add('hidden');
+    }
+
+    if (wizardBackBtn) {
+        wizardBackBtn.addEventListener('click', () => {
+            if (wizardStepIndex > 0) {
+                wizardStepIndex--;
+                renderWizardStep();
+            }
+        });
+    }
+
+    if (wizardNextBtn) {
+        wizardNextBtn.addEventListener('click', async () => {
+            if (wizardStepIndex < wizardSteps.length - 1) {
+                wizardStepIndex++;
+                renderWizardStep();
+                return;
+            }
+
+            wizardNextBtn.disabled = true;
+            wizardNextBtn.innerText = 'در حال ذخیره...';
+            try {
+                await savePreferences(wizardAnswers);
+                closeWizard();
+            } catch (err) {
+                console.error('Save preferences error:', err);
+                alert(err.message || 'ذخیره سلیقه مطالعه با خطا مواجه شد.');
+            } finally {
+                wizardNextBtn.disabled = false;
+                renderWizardStep();
+            }
+        });
+    }
+
+    if (closeWizardBtn) {
+        closeWizardBtn.addEventListener('click', closeWizard);
+    }
+
+    if (wizardModal) {
+        wizardModal.addEventListener('click', (e) => {
+            if (e.target === wizardModal) closeWizard();
+        });
+    }
+
+    // Shown once, right after the first successful login, if this account
+    // hasn't completed the wizard yet (checked against the server record).
+    async function maybeShowTasteWizard() {
+        if (!wizardModal || typeof getPreferences !== 'function') return;
+        try {
+            const prefs = await getPreferences();
+            if (prefs && prefs.completedAt) return;
+            wizardStepIndex = 0;
+            wizardAnswers.genres = [];
+            wizardAnswers.pace = '';
+            wizardAnswers.goal = '';
+            wizardAnswers.discovery = '';
+            wizardModal.querySelectorAll('.wizard-chip.selected').forEach(c => c.classList.remove('selected'));
+            renderWizardStep();
+            wizardModal.classList.remove('hidden');
+        } catch (err) {
+            console.error('maybeShowTasteWizard error:', err);
+        }
+    }
+
+    // --- 16c. Reading Story (Wrapped-style share card, drawn from GET /api/story) ---
+    const openStoryBtn = document.getElementById('open-story-btn');
+    const storyModal = document.getElementById('story-modal');
+    const closeStoryBtn = document.getElementById('close-story-btn');
+    const storyCanvas = document.getElementById('story-canvas');
+    const storyLoading = document.getElementById('story-loading');
+    const storyDownloadBtn = document.getElementById('story-download-btn');
+    let lastStoryData = null;
+
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+        const words = (text || '').split(' ');
+        let line = '';
+        let lines = 0;
+        for (let i = 0; i < words.length; i++) {
+            const testLine = line ? `${line} ${words[i]}` : words[i];
+            if (ctx.measureText(testLine).width > maxWidth && line) {
+                ctx.fillText(line, x, y);
+                line = words[i];
+                y += lineHeight;
+                lines++;
+                if (maxLines && lines >= maxLines) return y;
+            } else {
+                line = testLine;
+            }
+        }
+        if (line) ctx.fillText(line, x, y);
+        return y + lineHeight;
+    }
+
+    function loadStoryLogo() {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = chrome.runtime.getURL('assets/icons/logo-white.png');
+        });
+    }
+
+    async function renderStoryCanvas(data) {
+        const ctx = storyCanvas.getContext('2d');
+        const W = storyCanvas.width, H = storyCanvas.height;
+
+        const gradient = ctx.createLinearGradient(0, 0, W, H);
+        gradient.addColorStop(0, '#1c1030');
+        gradient.addColorStop(1, '#3a1f5c');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.textAlign = 'right';
+        ctx.direction = 'rtl';
+
+        const logo = await loadStoryLogo();
+        if (logo) {
+            const logoH = 70, logoW = logo.width * (logoH / logo.height);
+            ctx.drawImage(logo, W - 80 - logoW, 70, logoW, logoH);
+        }
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '700 46px Vazirmatn, sans-serif';
+        ctx.fillText(`استوری مطالعه ${data.displayName || 'کتاب‌خوان'}`, W - 80, 240);
+
+        ctx.font = '400 30px Vazirmatn, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText('میو بوک 🐈‍⬛', W - 80, 285);
+
+        // Big stat row: total books / pages read
+        ctx.font = '800 130px Vazirmatn, sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(String(data.totalBooks ?? 0), W - 80, 460);
+        ctx.font = '400 30px Vazirmatn, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText('کتاب در کتابخانه‌ات', W - 80, 505);
+
+        ctx.font = '800 90px Vazirmatn, sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(String(data.pagesRead ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','), W - 80, 630);
+        ctx.font = '400 30px Vazirmatn, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText('صفحه خوانده‌ای', W - 80, 670);
+
+        let y = 780;
+        const section = (title, books, emptyText) => {
+            ctx.font = '700 36px Vazirmatn, sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(title, W - 80, y);
+            y += 50;
+            ctx.font = '400 28px Vazirmatn, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            if (!books || books.length === 0) {
+                ctx.fillText(emptyText, W - 80, y);
+                y += 46;
+            } else {
+                books.slice(0, 3).forEach(b => {
+                    y = wrapCanvasText(ctx, `• ${b.title}${b.author ? ' — ' + b.author : ''}`, W - 80, y, W - 160, 40, 1);
+                });
+            }
+            y += 30;
+        };
+
+        section('در حال خواندن', data.reading, 'در حال حاضر چیزی نمی‌خوانی');
+        section('خوانده‌شده', data.read, 'هنوز کتابی رو تموم نکردی');
+        section('می‌خوام بخوانم', data.toRead, 'لیست بعدی خالیه');
+
+        if (data.genres && data.genres.length) {
+            ctx.font = '400 26px Vazirmatn, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fillText(`ژانر موردعلاقه: ${data.genres.slice(0, 3).join('، ')}`, W - 80, H - 140);
+        }
+
+        ctx.font = '400 24px Vazirmatn, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fillText('miobook.app', W - 80, H - 70);
+    }
+
+    async function openStoryModal() {
+        if (!storyModal || !storyCanvas) return;
+        if (typeof isConfigured !== 'function' || !isConfigured() || typeof fetchReadingStory !== 'function') {
+            alert('برای ساخت استوری ابتدا باید وارد حساب کاربری خود شوی.');
+            return;
+        }
+
+        storyModal.classList.remove('hidden');
+        if (storyLoading) storyLoading.classList.remove('hidden');
+
+        const data = await fetchReadingStory();
+        if (storyLoading) storyLoading.classList.add('hidden');
+
+        if (!data) {
+            alert('برای ساخت استوری ابتدا باید وارد حساب کاربری خود شوی.');
+            storyModal.classList.add('hidden');
+            return;
+        }
+
+        lastStoryData = data;
+        await renderStoryCanvas(data);
+    }
+
+    if (openStoryBtn) openStoryBtn.addEventListener('click', openStoryModal);
+    if (closeStoryBtn) closeStoryBtn.addEventListener('click', () => storyModal.classList.add('hidden'));
+    if (storyModal) {
+        storyModal.addEventListener('click', (e) => {
+            if (e.target === storyModal) storyModal.classList.add('hidden');
+        });
+    }
+    if (storyDownloadBtn) {
+        storyDownloadBtn.addEventListener('click', () => {
+            if (!lastStoryData || !storyCanvas) return;
+            const link = document.createElement('a');
+            link.download = 'miobook-story.png';
+            link.href = storyCanvas.toDataURL('image/png');
+            link.click();
+        });
     }
 
     // --- 17. Community Feed Loading & Rendering ---
@@ -1867,9 +2477,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const relativeTime = getRelativeTime(item.updatedAt);
                 const progressPct = item.totalPages > 0 ? Math.round((item.currentPage / item.totalPages) * 100) : 0;
                 
-                const liveBadgeHtml = item.isReadingNow 
-                    ? `<span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: bold; color: #00d2ff; background: rgba(0, 210, 255, 0.1); padding: 4px 8px; border-radius: 12px; animation: pulse 2s infinite;">
-                         <span style="width: 6px; height: 6px; border-radius: 50%; background: #00d2ff;"></span>
+                const liveBadgeHtml = item.isReadingNow
+                    ? `<span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: bold; color: #2ecc71; background: rgba(46, 204, 113, 0.12); padding: 4px 8px; border-radius: 12px; animation: pulse 2s infinite;">
+                         <span style="width: 6px; height: 6px; border-radius: 50%; background: #2ecc71;"></span>
                          در حال مطالعه (زنده)
                        </span>`
                     : '';
@@ -1936,6 +2546,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadWordBank();
     renderCharts();
     renderProfileView();
+
+    chrome.storage.local.get(['auth'], (result) => {
+        if (result.auth) {
+            syncAllLocalBooksToServer();
+            maybeShowTasteWizard();
+        }
+    });
 });
 
 // =====================================================================
@@ -1945,12 +2562,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 // real Turso-backed Express API (server/app.js) or existing
 // chrome.storage-based systems (books / readingGoal). No mock arrays.
 // =====================================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     function escapeHtmlLocal(str) {
         const div = document.createElement('div');
         div.innerText = str == null ? '' : String(str);
         return div.innerHTML;
+    }
+
+    // Compact, friendly empty/error state markup shared by the social widgets.
+    function renderEmptyState(icon, title, subtitle) {
+        return `
+            <div class="mini-empty-state">
+                <span class="mini-empty-icon">${icon}</span>
+                <strong class="mini-empty-title">${escapeHtmlLocal(title)}</strong>
+                <span class="mini-empty-subtitle">${escapeHtmlLocal(subtitle || '')}</span>
+            </div>
+        `;
     }
 
     // Returns the title of the book currently being read (first "reading" status book), or null.
@@ -1972,6 +2600,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Render: friends reading now (horizontal row) + community reading list ---
     // Community list (whole community, no follow-graph needed) — real /api/social-feed.
     const communityList = document.getElementById('community-reading-list');
+    const communityLiveCountEl = document.getElementById('community-live-count');
 
     async function loadCommunityWidget() {
         if (communityList) {
@@ -1981,8 +2610,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const feed = await fetchSocialStatuses();
             if (!communityList) return;
 
+            if (communityLiveCountEl) {
+                communityLiveCountEl.innerText = feed.length > 0
+                    ? `${feed.length.toLocaleString('fa-IR')} نفر همین الان در حال مطالعه‌اند`
+                    : '';
+            }
+
             if (feed.length === 0) {
-                communityList.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">میو! هنوز کسی وضعیت مطالعه‌اش را به اشتراک نگذاشته 🐾</div>';
+                communityList.innerHTML = renderEmptyState('🌙', 'فعلاً کسی در حال مطالعه نیست', 'اولین نفر باش و شروع کن!');
             } else {
                 communityList.innerHTML = feed.map(u => {
                     const progress = u.totalPages > 0 ? Math.round((u.currentPage / u.totalPages) * 100) : 0;
@@ -2001,7 +2636,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error('Error loading community widget:', err);
             if (communityList) {
-                communityList.innerHTML = `<div style="padding: 12px; color: #e63946; font-size: 12px;">خطا در دریافت اطلاعات جامعه: ${escapeHtmlLocal(err.message || 'اتصال برقرار نشد.')}</div>`;
+                communityList.innerHTML = renderEmptyState('⚠️', 'خطا در دریافت اطلاعات جامعه', err.message || 'اتصال برقرار نشد.');
             }
         }
     }
@@ -2023,7 +2658,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!friendsNowRow) return;
 
         if (!(await isLoggedIn())) {
-            friendsNowRow.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">برای افزودن و مشاهده دوستان ابتدا با اکانت گوگل وارد شوید.</div>';
+            friendsNowRow.innerHTML = renderEmptyState('🔑', 'برای دیدن دوستان وارد شو', 'با اکانت گوگل وارد شو تا ببینی دوستانت چه کتابی می‌خوانند.');
             return;
         }
 
@@ -2043,7 +2678,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const friends = await res.json();
 
             if (!Array.isArray(friends) || friends.length === 0) {
-                friendsNowRow.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">میو! هنوز دوستی اضافه نکرده‌ای. ایمیل دوستت را در بالا وارد کن و «افزودن دوست» را بزن! 🐾</div>';
+                friendsNowRow.innerHTML = renderEmptyState('🐱', 'هنوز کسی را دنبال نکرده‌ای', 'ایمیل دوستت را بالا وارد کن و دعوتش کن؛ ببین چه کتاب‌هایی می‌خواند.');
                 return;
             }
 
@@ -2064,7 +2699,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
         } catch (err) {
             console.error('Error loading friends widget:', err);
-            friendsNowRow.innerHTML = `<div style="padding: 12px; color: #e63946; font-size: 12px;">خطا در دریافت لیست دوستان: ${escapeHtmlLocal(err.message || 'اتصال برقرار نشد.')}</div>`;
+            friendsNowRow.innerHTML = renderEmptyState('⚠️', 'خطا در دریافت لیست دوستان', err.message || 'اتصال برقرار نشد.');
         }
     }
     loadFriendsWidget();
@@ -2142,7 +2777,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const events = await res.json();
 
             if (!Array.isArray(events) || events.length === 0) {
-                activityFeed.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">میو! هنوز فعالیتی ثبت نشده است. 🐾</div>';
+                activityFeed.innerHTML = renderEmptyState('🐾', 'هنوز فعالیتی ثبت نشده', 'وقتی تو یا دوستانت مطالعه کنید، اینجا نمایش داده می‌شود.');
                 return;
             }
 
@@ -2162,7 +2797,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
         } catch (err) {
             console.error('Error loading activity feed:', err);
-            activityFeed.innerHTML = `<div style="padding: 12px; color: #e63946; font-size: 12px;">خطا در دریافت فید فعالیت‌ها: ${escapeHtmlLocal(err.message || 'اتصال برقرار نشد.')}</div>`;
+            activityFeed.innerHTML = renderEmptyState('⚠️', 'خطا در دریافت فید فعالیت‌ها', err.message || 'اتصال برقرار نشد.');
         }
     }
     loadActivityFeed();
@@ -2238,21 +2873,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Notification bell / light-dark mode icon toggle (visual-only, mock) ---
+    // --- Notification bell: real unseen-activity count, dismissible ---
     const notifBellBtn = document.getElementById('notif-bell-btn');
     if (notifBellBtn) {
-        notifBellBtn.addEventListener('click', () => {
+        notifBellBtn.addEventListener('click', async () => {
             const badge = document.getElementById('notif-badge');
-            if (badge) badge.classList.toggle('hidden');
+            if (badge) badge.classList.add('hidden');
+            const events = await fetchActivityFeedSafe();
+            await chrome.storage.local.set({ notifSeenCount: events.length });
         });
     }
-    const modeToggleBtn = document.getElementById('mode-toggle-btn');
-    if (modeToggleBtn) {
-        modeToggleBtn.addEventListener('click', () => {
-            const themeBtn = document.getElementById('theme-toggle-btn');
-            if (themeBtn) themeBtn.click();
-        });
+
+    async function fetchActivityFeedSafe() {
+        try {
+            const res = await fetch(`${CUSTOM_SERVER_URL}/api/activity-feed`);
+            if (!res.ok) return [];
+            const events = await res.json();
+            return Array.isArray(events) ? events : [];
+        } catch (err) {
+            return [];
+        }
     }
+
+    async function refreshNotificationBadge() {
+        const badge = document.getElementById('notif-badge');
+        if (!notifBellBtn || !badge) return;
+
+        const settings = await chrome.storage.local.get(['notificationsEnabled']);
+        const notificationsEnabled = settings.notificationsEnabled !== false;
+        notifBellBtn.classList.toggle('hidden', !notificationsEnabled);
+        if (!notificationsEnabled) return;
+
+        const events = await fetchActivityFeedSafe();
+        const seen = await chrome.storage.local.get(['notifSeenCount']);
+        const seenCount = seen.notifSeenCount || 0;
+        const unseen = Math.max(events.length - seenCount, 0);
+
+        if (unseen > 0) {
+            badge.innerText = unseen.toLocaleString('fa-IR');
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+    refreshNotificationBadge();
 
     // --- Simple Jalali (Persian) calendar widget — pure JS conversion, no deps ---
     const PERSIAN_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
@@ -2323,6 +2987,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let calState = null; // { jy, jm }
 
+    // Per-day reading activity (real pomodoro sessions), keyed by Gregorian
+    // "Y-M-D" so it lines up with each rendered Jalali day's actual date.
+    let calendarActivityMap = {};
+    let calendarActivityLoaded = false;
+
+    function dateKey(d) {
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }
+
+    async function loadCalendarActivity() {
+        if (calendarActivityLoaded) return;
+        if (!(await isLoggedIn())) { calendarActivityLoaded = true; return; }
+        try {
+            const idToken = await getAuthToken();
+            if (!idToken) { calendarActivityLoaded = true; return; }
+            const res = await fetch(`${CUSTOM_SERVER_URL}/api/pomodoro-sessions`, {
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            if (!res.ok) throw new Error('پاسخ نامعتبر از سرور');
+            const sessions = await res.json();
+            const map = {};
+            (Array.isArray(sessions) ? sessions : []).forEach(s => {
+                const key = dateKey(new Date(s.completedAt));
+                if (!map[key]) map[key] = { minutes: 0, count: 0 };
+                map[key].minutes += s.durationMinutes || 0;
+                map[key].count += 1;
+            });
+            calendarActivityMap = map;
+        } catch (err) {
+            console.error('Error loading calendar activity:', err);
+        } finally {
+            calendarActivityLoaded = true;
+            renderCalendar();
+        }
+    }
+
+    let openCalendarPopoverDay = null;
+
+    function closeCalendarPopover() {
+        const existing = document.getElementById('calendar-day-popover');
+        if (existing) existing.remove();
+        openCalendarPopoverDay = null;
+    }
+
+    function showCalendarPopover(dayEl, jy, jm, jd, gregorianDate) {
+        closeCalendarPopover();
+        openCalendarPopoverDay = `${jy}-${jm}-${jd}`;
+
+        const activity = calendarActivityMap[dateKey(gregorianDate)];
+        const dateLabel = `${toPersianDigitsLocal(jd)} ${PERSIAN_MONTHS[jm - 1]} ${toPersianDigitsLocal(jy)}`;
+
+        const popover = document.createElement('div');
+        popover.id = 'calendar-day-popover';
+        popover.className = 'calendar-day-popover glass';
+        popover.innerHTML = activity
+            ? `<strong>${dateLabel}</strong>
+               <div class="cdp-row">⏱️ ${toPersianDigitsLocal(activity.minutes)} دقیقه مطالعه</div>
+               <div class="cdp-row">🍅 ${toPersianDigitsLocal(activity.count)} پومودورو</div>`
+            : `<strong>${dateLabel}</strong><div class="cdp-row cdp-empty">مطالعه‌ای ثبت نشده</div>`;
+
+        dayEl.appendChild(popover);
+    }
+
     function renderCalendar() {
         const monthLabel = document.getElementById('calendar-month-label');
         const grid = document.getElementById('calendar-grid');
@@ -2348,10 +3075,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         for (let d = 1; d <= daysInMonth; d++) {
             const isToday = (calState.jy === todayJy && calState.jm === todayJm && d === todayJd);
-            html += `<span class="calendar-day${isToday ? ' today' : ''}">${toPersianDigitsLocal(d)}</span>`;
+            const gDate = jalaliToGregorian(calState.jy, calState.jm, d);
+            const hasActivity = !!calendarActivityMap[dateKey(gDate)];
+            html += `<span class="calendar-day${isToday ? ' today' : ''}${hasActivity ? ' has-activity' : ''}" data-jy="${calState.jy}" data-jm="${calState.jm}" data-jd="${d}">${toPersianDigitsLocal(d)}${hasActivity ? '<span class="calendar-day-dot"></span>' : ''}</span>`;
         }
         grid.innerHTML = html;
+
+        grid.querySelectorAll('.calendar-day:not(.empty)').forEach(dayEl => {
+            dayEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const jy = parseInt(dayEl.dataset.jy, 10);
+                const jm = parseInt(dayEl.dataset.jm, 10);
+                const jd = parseInt(dayEl.dataset.jd, 10);
+                const key = `${jy}-${jm}-${jd}`;
+                if (openCalendarPopoverDay === key) { closeCalendarPopover(); return; }
+                showCalendarPopover(dayEl, jy, jm, jd, jalaliToGregorian(jy, jm, jd));
+            });
+        });
+
+        if (!calendarActivityLoaded) loadCalendarActivity();
     }
+
+    document.addEventListener('click', (e) => {
+        if (openCalendarPopoverDay && !e.target.closest('.calendar-day')) closeCalendarPopover();
+    });
 
     const calPrevBtn = document.getElementById('calendar-prev-btn');
     const calNextBtn = document.getElementById('calendar-next-btn');
@@ -2375,20 +3122,89 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Pomodoro widget (real countdown via setInterval; completed sessions are
     // persisted to the server via POST /api/pomodoro-sessions when the user is logged in) ---
-    const POMODORO_WORK_MINUTES = 25;
-    const POMODORO_WORK_SECONDS = POMODORO_WORK_MINUTES * 60;
-    let pomodoroSecondsLeft = POMODORO_WORK_SECONDS - 1; // starts at 24:59 to match the reference design
+    // Duration/session-count are user-configurable from the Settings tab (see
+    // applyPomodoroSettings below) — these are just the defaults until loaded.
+    let POMODORO_WORK_MINUTES = 25;
+    let POMODORO_WORK_SECONDS = POMODORO_WORK_MINUTES * 60;
+    let POMODORO_SESSION_TOTAL = 4;
+    const storedPomodoroSettings = await chrome.storage.local.get(['pomodoroSettings']);
+    if (storedPomodoroSettings.pomodoroSettings) {
+        POMODORO_WORK_MINUTES = storedPomodoroSettings.pomodoroSettings.workMinutes || 25;
+        POMODORO_SESSION_TOTAL = storedPomodoroSettings.pomodoroSettings.sessionTotal || 4;
+        POMODORO_WORK_SECONDS = POMODORO_WORK_MINUTES * 60;
+    }
+    let pomodoroSecondsLeft = POMODORO_WORK_SECONDS - 1; // starts one second below full to match the reference design
     let pomodoroRunning = true;
     let pomodoroInterval = null;
     let pomodoroSessionCurrent = 1;
-    const POMODORO_SESSION_TOTAL = 4;
 
     const pomodoroTimerEl = document.getElementById('pomodoro-timer');
     const pomodoroToggleBtn = document.getElementById('pomodoro-toggle-btn');
     const pomodoroResetBtn = document.getElementById('pomodoro-reset-btn');
     const pomodoroStatusEl = document.getElementById('pomodoro-status');
     const pomodoroSessionCurrentEl = document.getElementById('pomodoro-session-current');
+    const pomodoroSessionTotalEl = document.getElementById('pomodoro-session-total');
+    const pomodoroBookSelect = document.getElementById('pomodoro-book-select');
+    const pomodoroBookTitleEl = document.getElementById('pomodoro-book-title');
+    const pomodoroBookAuthorEl = document.getElementById('pomodoro-book-author');
     let pomodoroLoginHintEl = null;
+
+    if (pomodoroSessionTotalEl) pomodoroSessionTotalEl.innerText = POMODORO_SESSION_TOTAL.toLocaleString('fa-IR');
+
+    // --- Pomodoro: which book the user is reading during this session ---
+    function renderPomodoroBookDisplay(book) {
+        if (pomodoroBookTitleEl) pomodoroBookTitleEl.innerText = book ? book.title : 'بدون کتاب';
+        if (pomodoroBookAuthorEl) pomodoroBookAuthorEl.innerText = book ? (book.author || '') : '';
+    }
+
+    function loadPomodoroBookOptions(selectedId) {
+        if (!pomodoroBookSelect) return;
+        chrome.storage.local.get(['books', 'pomodoroSelectedBookId'], (result) => {
+            const books = result.books || [];
+            const readingBooks = books.filter(b => b.status === 'reading');
+            const currentSelection = selectedId !== undefined ? selectedId : (result.pomodoroSelectedBookId || '');
+
+            pomodoroBookSelect.innerHTML = '<option value="">-- بدون کتاب --</option>';
+            readingBooks.forEach(book => {
+                const opt = document.createElement('option');
+                opt.value = book.id;
+                opt.textContent = book.title;
+                if (book.id === currentSelection) opt.selected = true;
+                pomodoroBookSelect.appendChild(opt);
+            });
+
+            const selectedBook = readingBooks.find(b => b.id === currentSelection) || null;
+            renderPomodoroBookDisplay(selectedBook);
+        });
+    }
+
+    if (pomodoroBookSelect) {
+        pomodoroBookSelect.addEventListener('change', () => {
+            const bookId = pomodoroBookSelect.value;
+            chrome.storage.local.set({ pomodoroSelectedBookId: bookId }, () => {
+                loadPomodoroBookOptions(bookId);
+            });
+        });
+    }
+
+    loadPomodoroBookOptions();
+
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.books) {
+            loadPomodoroBookOptions();
+        }
+    });
+
+    // Returns the title/author of the book selected in the Pomodoro widget, or null.
+    function getPomodoroSelectedBook() {
+        return new Promise(resolve => {
+            chrome.storage.local.get(['books', 'pomodoroSelectedBookId'], result => {
+                const books = result.books || [];
+                const book = books.find(b => b.id === result.pomodoroSelectedBookId);
+                resolve(book || null);
+            });
+        });
+    }
 
     async function renderPomodoroLoginHint() {
         if (await isLoggedIn()) {
@@ -2413,7 +3229,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const idToken = await getAuthToken();
             if (!idToken) return;
 
-            const bookTitle = await getCurrentBookTitle();
+            const selectedBook = await getPomodoroSelectedBook();
+            const bookTitle = selectedBook ? selectedBook.title : await getCurrentBookTitle();
             const res = await fetch(`${CUSTOM_SERVER_URL}/api/pomodoro-sessions`, {
                 method: 'POST',
                 headers: {
@@ -2451,7 +3268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pomodoroSessionCurrent++;
                 if (pomodoroSessionCurrentEl) pomodoroSessionCurrentEl.innerText = toPersianDigitsLocal(pomodoroSessionCurrent);
             }
-            if (pomodoroStatusEl) pomodoroStatusEl.innerText = 'پایان جلسه! کمی استراحت کن 🐾';
+            if (pomodoroStatusEl) pomodoroStatusEl.innerText = '🟡 در حال استراحت';
             if (pomodoroToggleBtn) pomodoroToggleBtn.innerText = 'شروع مجدد';
             persistPomodoroSession();
             return;
@@ -2463,7 +3280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function startPomodoro() {
         pomodoroRunning = true;
         if (pomodoroToggleBtn) pomodoroToggleBtn.innerText = 'توقف';
-        if (pomodoroStatusEl) pomodoroStatusEl.innerText = 'در حال مطالعه';
+        if (pomodoroStatusEl) pomodoroStatusEl.innerText = '🟢 در حال مطالعه';
         pomodoroInterval = setInterval(tickPomodoro, 1000);
     }
 
@@ -2471,7 +3288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pomodoroRunning = false;
         clearInterval(pomodoroInterval);
         if (pomodoroToggleBtn) pomodoroToggleBtn.innerText = 'ادامه';
-        if (pomodoroStatusEl) pomodoroStatusEl.innerText = 'متوقف شده';
+        if (pomodoroStatusEl) pomodoroStatusEl.innerText = '⚪ متوقف شده';
     }
 
     if (pomodoroToggleBtn) {
@@ -2504,14 +3321,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pomodoroRunning) startPomodoro();
 
     // --- Weekly goal widget — real data from GET /api/pomodoro-sessions ---
-    // There's no separate "weekly hours" goal system in the extension yet, so this
-    // widget shows real minutes read this week (sum of persisted Pomodoro sessions)
-    // against a disclosed, non-arbitrary target of one 25-minute Pomodoro/day (175 min/week).
-    const WEEKLY_GOAL_TARGET_MINUTES = POMODORO_WORK_MINUTES * 7;
+    // Target is user-configurable from Settings (stored as weeklyGoalMinutes);
+    // falls back to one Pomodoro/day worth of minutes if never set.
+    let WEEKLY_GOAL_TARGET_MINUTES = POMODORO_WORK_MINUTES * 7;
+    const storedWeeklyGoal = await chrome.storage.local.get(['weeklyGoalMinutes']);
+    if (storedWeeklyGoal.weeklyGoalMinutes) WEEKLY_GOAL_TARGET_MINUTES = storedWeeklyGoal.weeklyGoalMinutes;
     const weeklyGoalCurrentEl = document.getElementById('weekly-goal-current');
     const weeklyGoalTargetEl = document.getElementById('weekly-goal-target');
     const weeklyGoalFillEl = document.getElementById('weekly-goal-fill');
     const weeklyGoalTextEl = document.querySelector('.weekly-goal-text');
+    const weeklyGoalStreakEl = document.getElementById('weekly-goal-streak');
+
+    // Consecutive-day streak, counted backward from today, based on days that have at least one completed session.
+    function computeStreakDays(sessions) {
+        const daysWithSession = new Set(
+            sessions.map(s => new Date(s.completedAt).toDateString())
+        );
+        let streak = 0;
+        const cursor = new Date();
+        while (daysWithSession.has(cursor.toDateString())) {
+            streak++;
+            cursor.setDate(cursor.getDate() - 1);
+        }
+        return streak;
+    }
 
     function startOfWeek() {
         // Persian week starts on Saturday.
@@ -2555,10 +3388,129 @@ document.addEventListener('DOMContentLoaded', () => {
                 weeklyGoalTextEl.innerHTML = `<span id="weekly-goal-current">${weeklyMinutes.toLocaleString('fa-IR')}</span> از <span id="weekly-goal-target">${WEEKLY_GOAL_TARGET_MINUTES.toLocaleString('fa-IR')}</span> دقیقه مطالعه (پومودورو)`;
             }
             if (weeklyGoalFillEl) weeklyGoalFillEl.style.width = `${pct}%`;
+
+            if (weeklyGoalStreakEl) {
+                const streakDays = computeStreakDays(Array.isArray(sessions) ? sessions : []);
+                weeklyGoalStreakEl.innerText = streakDays > 0
+                    ? `🔥 ${streakDays.toLocaleString('fa-IR')} روز متوالی`
+                    : '';
+            }
         } catch (err) {
             console.error('Error loading weekly goal widget:', err);
             if (weeklyGoalTextEl) weeklyGoalTextEl.innerText = 'خطا در دریافت پیشرفت هفتگی.';
         }
     }
     loadWeeklyGoalWidget();
+
+    // --- Settings tab: account status, appearance, pomodoro/goal config, privacy & notifications ---
+    // Every control here reads from and writes to real chrome.storage state —
+    // nothing on this page is a static placeholder.
+    // Exposed on window: the tab-switch handler lives in the earlier,
+    // separate DOMContentLoaded closure and can't see this scope directly.
+    window.renderSettingsView = async function renderSettingsView() {
+        const auth = await chrome.storage.local.get(['auth']);
+        const loggedInEl = document.getElementById('settings-account-logged-in');
+        const loggedOutEl = document.getElementById('settings-account-logged-out');
+
+        if (auth.auth) {
+            if (loggedInEl) loggedInEl.classList.remove('hidden');
+            if (loggedOutEl) loggedOutEl.classList.add('hidden');
+            const avatarEl = document.getElementById('settings-account-avatar');
+            const nameEl = document.getElementById('settings-account-name');
+            const emailEl = document.getElementById('settings-account-email');
+            if (avatarEl) avatarEl.src = auth.auth.photoUrl;
+            if (nameEl) nameEl.innerText = auth.auth.displayName;
+            if (emailEl) emailEl.innerText = auth.auth.email;
+        } else {
+            if (loggedInEl) loggedInEl.classList.add('hidden');
+            if (loggedOutEl) loggedOutEl.classList.remove('hidden');
+        }
+
+        const pomodoroMinutesInput = document.getElementById('settings-pomodoro-minutes');
+        const pomodoroSessionsInput = document.getElementById('settings-pomodoro-sessions');
+        const weeklyGoalHoursInput = document.getElementById('settings-weekly-goal-hours');
+        if (pomodoroMinutesInput) pomodoroMinutesInput.value = POMODORO_WORK_MINUTES;
+        if (pomodoroSessionsInput) pomodoroSessionsInput.value = POMODORO_SESSION_TOTAL;
+        if (weeklyGoalHoursInput) weeklyGoalHoursInput.value = Math.round(WEEKLY_GOAL_TARGET_MINUTES / 60);
+
+        const prefs = await chrome.storage.local.get(['privacyDefaultShare', 'notificationsEnabled']);
+        const privacyToggle = document.getElementById('settings-privacy-toggle');
+        const notifToggle = document.getElementById('settings-notifications-toggle');
+        if (privacyToggle) privacyToggle.checked = prefs.privacyDefaultShare !== false; // default: on
+        if (notifToggle) notifToggle.checked = prefs.notificationsEnabled !== false; // default: on
+    };
+
+    const settingsGotoLoginBtn = document.getElementById('settings-goto-login-btn');
+    if (settingsGotoLoginBtn) {
+        settingsGotoLoginBtn.addEventListener('click', () => {
+            const profileNav = document.getElementById('profile-nav-btn');
+            if (profileNav) profileNav.click();
+        });
+    }
+
+    const settingsLogoutBtn = document.getElementById('settings-logout-btn');
+    if (settingsLogoutBtn) {
+        settingsLogoutBtn.addEventListener('click', async () => {
+            if (confirm('آیا مایل به خروج از حساب کاربری خود هستید؟')) {
+                await logout();
+                window.renderProfileView();
+                window.renderSettingsView();
+            }
+        });
+    }
+
+    const settingsSaveGoalsBtn = document.getElementById('settings-save-goals-btn');
+    if (settingsSaveGoalsBtn) {
+        settingsSaveGoalsBtn.addEventListener('click', async () => {
+            const statusEl = document.getElementById('settings-goals-status');
+            const minutesInput = document.getElementById('settings-pomodoro-minutes');
+            const sessionsInput = document.getElementById('settings-pomodoro-sessions');
+            const goalHoursInput = document.getElementById('settings-weekly-goal-hours');
+
+            const workMinutes = Math.min(Math.max(parseInt(minutesInput.value, 10) || 25, 5), 120);
+            const sessionTotal = Math.min(Math.max(parseInt(sessionsInput.value, 10) || 4, 1), 12);
+            const goalHours = Math.min(Math.max(parseInt(goalHoursInput.value, 10) || 3, 1), 60);
+
+            POMODORO_WORK_MINUTES = workMinutes;
+            POMODORO_SESSION_TOTAL = sessionTotal;
+            POMODORO_WORK_SECONDS = POMODORO_WORK_MINUTES * 60;
+            WEEKLY_GOAL_TARGET_MINUTES = goalHours * 60;
+
+            await chrome.storage.local.set({
+                pomodoroSettings: { workMinutes, sessionTotal },
+                weeklyGoalMinutes: WEEKLY_GOAL_TARGET_MINUTES
+            });
+
+            if (pomodoroSessionTotalEl) pomodoroSessionTotalEl.innerText = POMODORO_SESSION_TOTAL.toLocaleString('fa-IR');
+            if (!pomodoroRunning) {
+                pomodoroSecondsLeft = POMODORO_WORK_SECONDS - 1;
+                renderPomodoroTimer();
+            }
+            loadWeeklyGoalWidget();
+
+            minutesInput.value = workMinutes;
+            sessionsInput.value = sessionTotal;
+            goalHoursInput.value = goalHours;
+
+            if (statusEl) {
+                statusEl.innerText = 'ذخیره شد ✅';
+                setTimeout(() => { statusEl.innerText = ''; }, 2500);
+            }
+        });
+    }
+
+    const settingsPrivacyToggle = document.getElementById('settings-privacy-toggle');
+    if (settingsPrivacyToggle) {
+        settingsPrivacyToggle.addEventListener('change', () => {
+            chrome.storage.local.set({ privacyDefaultShare: settingsPrivacyToggle.checked });
+        });
+    }
+
+    const settingsNotifToggle = document.getElementById('settings-notifications-toggle');
+    if (settingsNotifToggle) {
+        settingsNotifToggle.addEventListener('change', () => {
+            chrome.storage.local.set({ notificationsEnabled: settingsNotifToggle.checked });
+            refreshNotificationBadge();
+        });
+    }
 });

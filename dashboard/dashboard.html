@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
 </head>
-<body data-theme="dark">
+<body>
     <div class="dashboard-wrapper">
         
         <!-- SIDEBAR NAVIGATION -->
@@ -63,7 +63,7 @@
             <div class="sidebar-spacer"></div>
 
             <ul class="nav-links">
-                <li class="nav-item" id="theme-toggle-btn" data-tab="settings">
+                <li class="nav-item" data-tab="settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     <span data-i18n="nav.settings">تنظیمات 🐾</span>
                 </li>
@@ -94,7 +94,7 @@
                 <div class="header-actions">
                     <button class="icon-btn clickable" id="notif-bell-btn" title="اعلان‌ها">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                        <span class="icon-badge" id="notif-badge">۳</span>
+                        <span class="icon-badge hidden" id="notif-badge"></span>
                     </button>
                     <button class="icon-btn clickable" id="mode-toggle-btn" title="حالت روشن/تاریک">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
@@ -147,9 +147,8 @@
                                 <span id="hero-progress-pages">صفحه ۱۴۳ از ۲۵۵</span>
                             </div>
                             <div class="hero-chips">
-                                <div class="hero-chip"><span class="hero-chip-label">شروع مطالعه</span><span class="hero-chip-value">۲۱ مرداد</span></div>
-                                <div class="hero-chip"><span class="hero-chip-label">زمان مطالعه</span><span class="hero-chip-value">۱۴ ساعت</span></div>
-                                <div class="hero-chip"><span class="hero-chip-label">هدف</span><span class="hero-chip-value">تا پایان شهریور</span></div>
+                                <div class="hero-chip"><span class="hero-chip-label">افزوده شده</span><span class="hero-chip-value" id="hero-chip-added">—</span></div>
+                                <div class="hero-chip"><span class="hero-chip-label">باقی‌مانده</span><span class="hero-chip-value" id="hero-chip-remaining">—</span></div>
                                 <button class="hero-chip hero-chip-btn clickable" id="hero-quick-note-btn"><span class="hero-chip-label">📝</span><span class="hero-chip-value">یادداشت سریع</span></button>
                             </div>
                         </div>
@@ -211,7 +210,8 @@
                         
                         <div class="empty-state hidden" id="shelf-empty">
                             <div style="font-size: 48px; margin-bottom: 16px;">🐈‍⬛</div>
-                            <p>میو! اینجا خیلی خلوته، هنوز کتابی اضافه نکردی.</p>
+                            <p>هنوز کتابی به کتابخانه‌ات اضافه نکرده‌ای</p>
+                            <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">با «افزودن کتاب» شروع کن یا از طاقچه و فیدیبو درون‌ریزی کن.</span>
                         </div>
                     </section>
 
@@ -219,7 +219,8 @@
                     <div class="dashboard-two-col">
                         <section class="dashboard-section glass community-reading-section">
                             <div class="section-header">
-                                <h2>در حال مطالعه (همه کاربران)</h2>
+                                <h2>🐾 اکنون در حال مطالعه</h2>
+                                <span class="live-count-badge" id="community-live-count"></span>
                             </div>
                             <div class="community-reading-list" id="community-reading-list"><!-- MOCK_COMMUNITY_READING rendered here --></div>
                         </section>
@@ -400,6 +401,115 @@
                         </div>
                     </section>
 
+                    <!-- Word Bank -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h2>📖 بانک کلمات</h2>
+                            <button class="btn-secondary clickable hidden" id="dash-export-words-btn" style="font-size: 12px;">⬇️ خروجی CSV</button>
+                        </div>
+                        <input type="text" id="wb-search-input" placeholder="جستجو در کلمات ذخیره‌شده..." style="width: 100%; margin-bottom: 16px; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-primary);">
+                        <div id="wb-empty" class="empty-state hidden" style="text-align: center; padding: 20px;">
+                            <div style="font-size: 40px; margin-bottom: 12px;">🐾</div>
+                            <p style="color: var(--text-secondary); font-size: 13px;">هنوز کلمه‌ای ذخیره نکرده‌ای.</p>
+                        </div>
+                        <div id="wb-mini-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    </section>
+
+                    <!-- Suggestion Box -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>💡 پیشنهاد و ایده</h2>
+                        </div>
+                        <textarea id="suggestion-text" rows="3" placeholder="ایده یا پیشنهاد خود را برای بهبود میو بوک بنویسید..." style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-primary); resize: vertical; font-family: var(--font-family); margin-bottom: 12px;"></textarea>
+                        <button class="btn-primary clickable" id="send-suggestion-btn" style="font-size: 12px;">ارسال پیشنهاد</button>
+                        <p id="suggestion-status" class="suggestion-status-text hidden" style="font-size: 12px; margin-top: 10px;"></p>
+                    </section>
+                </div>
+
+                <!-- Settings Tab View -->
+                <div id="settings-view" class="tab-view-container hidden" style="padding: 0 8px; direction: rtl; text-align: right;">
+
+                    <!-- Account status -->
+                    <section class="dashboard-section glass settings-account-card" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>👤 حساب کاربری</h2>
+                        </div>
+                        <div id="settings-account-logged-out" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                            <span style="font-size: 13px; color: var(--text-secondary);">وارد نشده‌ای — بدون ورود، دوستان، فعالیت جامعه و همگام‌سازی ابری در دسترس نیست.</span>
+                            <button class="btn-primary clickable" id="settings-goto-login-btn" style="font-size: 12px; padding: 8px 18px; border-radius: 100px;">ورود به حساب کاربری</button>
+                        </div>
+                        <div id="settings-account-logged-in" class="hidden" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img id="settings-account-avatar" src="../assets/icons/icon-48.png" alt="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-color);">
+                                <div>
+                                    <div id="settings-account-name" style="font-size: 13px; font-weight: 700; color: var(--text-primary);"></div>
+                                    <div id="settings-account-email" style="font-size: 11px; color: var(--text-secondary);"></div>
+                                </div>
+                            </div>
+                            <button class="btn-secondary clickable" id="settings-logout-btn" style="font-size: 12px; padding: 8px 18px; border-radius: 100px; color: #ff6b6b; border-color: rgba(255,107,107,0.2);">خروج از حساب</button>
+                        </div>
+                    </section>
+
+                    <!-- Appearance -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>🎨 ظاهر برنامه</h2>
+                        </div>
+                        <div class="settings-theme-grid" id="settings-theme-grid">
+                            <button class="settings-theme-btn clickable" data-theme-choice="light"><span class="settings-theme-swatch light"></span>روشن</button>
+                            <button class="settings-theme-btn clickable" data-theme-choice="sepia"><span class="settings-theme-swatch sepia"></span>سپیا</button>
+                            <button class="settings-theme-btn clickable" data-theme-choice="moss"><span class="settings-theme-swatch moss"></span>خزه‌ای</button>
+                            <button class="settings-theme-btn clickable" data-theme-choice="dark"><span class="settings-theme-swatch dark"></span>تیره</button>
+                        </div>
+                        <a href="../options/language.html" target="_blank" class="btn-secondary clickable" style="display: inline-block; margin-top: 16px; padding: 8px 16px; border-radius: 100px; font-weight: bold; text-decoration: none; font-size: 12px;">
+                            🌐 زبان رابط کاربری
+                        </a>
+                    </section>
+
+                    <!-- Pomodoro & Weekly Goal Settings -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>🍅 پومودورو و هدف هفتگی</h2>
+                        </div>
+                        <div class="settings-field-grid">
+                            <div class="form-group">
+                                <label for="settings-pomodoro-minutes">مدت هر جلسه پومودورو (دقیقه)</label>
+                                <input type="number" id="settings-pomodoro-minutes" min="5" max="120" placeholder="۲۵">
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-pomodoro-sessions">تعداد جلسات هدف روزانه</label>
+                                <input type="number" id="settings-pomodoro-sessions" min="1" max="12" placeholder="۴">
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-weekly-goal-hours">هدف مطالعه هفتگی (ساعت)</label>
+                                <input type="number" id="settings-weekly-goal-hours" min="1" max="60" placeholder="۳">
+                            </div>
+                        </div>
+                        <button class="btn-primary clickable" id="settings-save-goals-btn" style="font-size: 12px; margin-top: 4px;">ذخیره تنظیمات</button>
+                        <p id="settings-goals-status" style="font-size: 11px; margin-top: 8px; min-height: 14px; color: #2e6f40;"></p>
+                    </section>
+
+                    <!-- Privacy & Notifications -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>🔔 حریم خصوصی و اعلان‌ها</h2>
+                        </div>
+                        <label class="settings-toggle-row">
+                            <span>
+                                <strong>اشتراک‌گذاری پیش‌فرض وضعیت مطالعه</strong>
+                                <span class="settings-toggle-desc">وقتی کتاب جدیدی رو شروع می‌کنی، به‌صورت پیش‌فرض با جامعه به اشتراک گذاشته بشه.</span>
+                            </span>
+                            <span class="settings-switch"><input type="checkbox" id="settings-privacy-toggle"><span class="settings-switch-track"></span></span>
+                        </label>
+                        <label class="settings-toggle-row">
+                            <span>
+                                <strong>نمایش اعلان‌ها</strong>
+                                <span class="settings-toggle-desc">فعالیت‌های جدید دوستان روی زنگوله‌ی بالای صفحه نشان داده شود.</span>
+                            </span>
+                            <span class="settings-switch"><input type="checkbox" id="settings-notifications-toggle" checked><span class="settings-switch-track"></span></span>
+                        </label>
+                    </section>
+
                     <!-- Store Account Connectors -->
                     <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
                         <div class="section-header" style="margin-bottom: 8px;">
@@ -426,20 +536,6 @@
                         </div>
                     </section>
 
-                    <!-- Word Bank -->
-                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
-                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h2>📖 بانک کلمات</h2>
-                            <button class="btn-secondary clickable hidden" id="dash-export-words-btn" style="font-size: 12px;">⬇️ خروجی CSV</button>
-                        </div>
-                        <input type="text" id="wb-search-input" placeholder="جستجو در کلمات ذخیره‌شده..." style="width: 100%; margin-bottom: 16px; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-primary);">
-                        <div id="wb-empty" class="empty-state hidden" style="text-align: center; padding: 20px;">
-                            <div style="font-size: 40px; margin-bottom: 12px;">🐾</div>
-                            <p style="color: var(--text-secondary); font-size: 13px;">هنوز کلمه‌ای ذخیره نکرده‌ای.</p>
-                        </div>
-                        <div id="wb-mini-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                    </section>
-
                     <!-- Goodreads Import -->
                     <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
                         <div class="section-header" style="margin-bottom: 16px;">
@@ -453,7 +549,7 @@
                     </section>
 
                     <!-- Backup & Restore -->
-                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
                         <div class="section-header" style="margin-bottom: 16px;">
                             <h2>💾 پشتیبان‌گیری و بازیابی</h2>
                         </div>
@@ -466,16 +562,6 @@
                             <button class="btn-danger clickable" id="clear-all-data-btn" style="font-size: 12px;">🗑️ حذف کامل داده‌ها</button>
                         </div>
                     </section>
-
-                    <!-- Suggestion Box -->
-                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-                        <div class="section-header" style="margin-bottom: 16px;">
-                            <h2>💡 پیشنهاد و ایده</h2>
-                        </div>
-                        <textarea id="suggestion-text" rows="3" placeholder="ایده یا پیشنهاد خود را برای بهبود میو بوک بنویسید..." style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-primary); resize: vertical; font-family: var(--font-family); margin-bottom: 12px;"></textarea>
-                        <button class="btn-primary clickable" id="send-suggestion-btn" style="font-size: 12px;">ارسال پیشنهاد</button>
-                        <p id="suggestion-status" class="suggestion-status-text hidden" style="font-size: 12px; margin-top: 10px;"></p>
-                    </section>
                 </div>
 
             </div>
@@ -487,17 +573,20 @@
             <!-- Profile Card Widget -->
             <div class="widget-card glass profile-widget">
                 <div class="profile-widget-avatar">🐈‍⬛</div>
-                <h3 class="profile-widget-name">سارا</h3>
+                <h3 class="profile-widget-name" id="profile-widget-name">میهمان</h3>
                 <p class="profile-widget-tagline">عاشق کتاب و قهوه</p>
                 <span class="profile-widget-level">سطح ۱۲</span>
                 <div class="profile-widget-stats">
-                    <div class="pw-stat"><strong id="pw-stat-reading">۳</strong><span>در حال مطالعه</span></div>
-                    <div class="pw-stat"><strong id="pw-stat-hours">۱۴۲</strong><span>ساعت مطالعه</span></div>
-                    <div class="pw-stat"><strong id="pw-stat-total">۲۸</strong><span>کل کتاب‌ها</span></div>
+                    <div class="pw-stat"><strong id="pw-stat-total">۰</strong><span>کل کتاب‌ها</span></div>
+                    <div class="pw-stat"><strong id="pw-stat-reading">۰</strong><span>در حال مطالعه</span></div>
+                    <div class="pw-stat"><strong id="pw-stat-read">۰</strong><span>خوانده‌شده</span></div>
                 </div>
                 <div class="profile-widget-level-bar">
                     <div class="profile-widget-level-fill" style="width: 68%;"></div>
                 </div>
+                <button class="btn-secondary clickable story-open-btn" id="open-story-btn" style="width:100%; margin-top:12px; font-size:12px; padding:8px 12px; border-radius:100px;">
+                    📖 استوری مطالعه من
+                </button>
             </div>
 
             <!-- Pomodoro Widget -->
@@ -508,9 +597,12 @@
                 </div>
                 <span class="pomodoro-status" id="pomodoro-status">در حال مطالعه</span>
                 <div class="pomodoro-timer" id="pomodoro-timer">۲۴:۵۹</div>
-                <div class="pomodoro-book">
-                    <span id="pomodoro-book-title">عادت‌های اتمی</span>
-                    <span class="pomodoro-book-author" id="pomodoro-book-author">جیمز کلیر</span>
+                <select id="pomodoro-book-select" class="pomodoro-book-select" title="انتخاب کتاب در حال مطالعه">
+                    <option value="">-- بدون کتاب --</option>
+                </select>
+                <div class="pomodoro-book" id="pomodoro-book-display">
+                    <span id="pomodoro-book-title">بدون کتاب</span>
+                    <span class="pomodoro-book-author" id="pomodoro-book-author"></span>
                 </div>
                 <div class="pomodoro-cat-scene"><span>🐈‍⬛</span></div>
                 <div class="pomodoro-controls">
@@ -543,6 +635,7 @@
                 <div class="weekly-goal-bar">
                     <div class="weekly-goal-fill" id="weekly-goal-fill" style="width: 75%;"></div>
                 </div>
+                <span class="weekly-goal-streak" id="weekly-goal-streak"></span>
             </div>
 
         </aside>
@@ -605,6 +698,7 @@
                     <div class="bd-info">
                         <h4 id="details-book-author">نویسنده</h4>
                         <div class="bd-status-badge" id="details-book-status">در حال مطالعه</div>
+                        <div class="bd-publisher hidden" id="details-book-publisher"></div>
                         <div class="bd-progress-bar-wrapper">
                             <div class="bd-progress-info">
                                 <span>میزان پیشرفت</span>
@@ -628,6 +722,13 @@
                         📢 اعلام شروع مطالعه
                     </button>
                 </div>
+
+                <!-- Book Summary Section (author/publisher/synopsis fetched & cached server-side) -->
+                <div class="bd-summary-section hidden" id="details-book-summary-section">
+                    <div class="divider">درباره این کتاب</div>
+                    <p class="bd-summary-text" id="details-book-summary-text"></p>
+                </div>
+                <div class="bd-summary-loading" id="details-book-summary-loading">در حال دریافت خلاصه کتاب...</div>
 
                 <!-- Bookstore Comparison Section -->
                 <div class="bookstore-comparison-section" id="details-bookstore-comparison">
@@ -653,6 +754,91 @@
 
                 <div class="modal-footer-danger">
                     <button class="btn-danger w-100" id="details-delete-book-btn">🗑️ حذف این کتاب از کتابخانه</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboarding Taste Wizard (shown once after first login; saved to the server) -->
+    <div class="modal hidden" id="taste-wizard-modal">
+        <div class="modal-content glass animate-slide-in wizard-content">
+            <div class="modal-header">
+                <h3>بیایید سلیقه‌ات رو بشناسیم 🐾</h3>
+                <button class="close-modal-btn clickable" id="close-wizard-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="wizard-progress">
+                    <div class="wizard-progress-fill" id="wizard-progress-fill"></div>
+                </div>
+
+                <div class="wizard-step" data-step="1">
+                    <h4>چه ژانرهایی رو دوست داری؟</h4>
+                    <p class="wizard-hint">هر چندتا که می‌خوای انتخاب کن.</p>
+                    <div class="wizard-chip-grid" id="wizard-genres-grid" data-multi="true">
+                        <button type="button" class="wizard-chip clickable" data-value="رمان">📖 رمان</button>
+                        <button type="button" class="wizard-chip clickable" data-value="تاریخی">🏛️ تاریخی</button>
+                        <button type="button" class="wizard-chip clickable" data-value="علمی-تخیلی">🚀 علمی-تخیلی</button>
+                        <button type="button" class="wizard-chip clickable" data-value="فلسفه">🧠 فلسفه</button>
+                        <button type="button" class="wizard-chip clickable" data-value="روانشناسی">💬 روانشناسی</button>
+                        <button type="button" class="wizard-chip clickable" data-value="خودیاری">🌱 خودیاری</button>
+                        <button type="button" class="wizard-chip clickable" data-value="شعر">🖋️ شعر</button>
+                        <button type="button" class="wizard-chip clickable" data-value="زندگینامه">🎭 زندگینامه</button>
+                        <button type="button" class="wizard-chip clickable" data-value="اقتصاد">📈 اقتصاد و کسب‌وکار</button>
+                        <button type="button" class="wizard-chip clickable" data-value="کودک و نوجوان">🧸 کودک و نوجوان</button>
+                    </div>
+                </div>
+
+                <div class="wizard-step hidden" data-step="2">
+                    <h4>معمولاً چقدر مطالعه می‌کنی؟</h4>
+                    <div class="wizard-chip-grid" id="wizard-pace-grid" data-multi="false">
+                        <button type="button" class="wizard-chip clickable" data-value="کم">🐢 کم — ماهی یک کتاب</button>
+                        <button type="button" class="wizard-chip clickable" data-value="متوسط">🚶 متوسط — هفته‌ای یک کتاب</button>
+                        <button type="button" class="wizard-chip clickable" data-value="زیاد">🏃 زیاد — هفته‌ای چند کتاب</button>
+                    </div>
+                </div>
+
+                <div class="wizard-step hidden" data-step="3">
+                    <h4>هدفت از مطالعه چیه؟</h4>
+                    <div class="wizard-chip-grid" id="wizard-goal-grid" data-multi="false">
+                        <button type="button" class="wizard-chip clickable" data-value="سرگرمی">🎉 سرگرمی و لذت</button>
+                        <button type="button" class="wizard-chip clickable" data-value="یادگیری">🎓 یادگیری و دانش</button>
+                        <button type="button" class="wizard-chip clickable" data-value="رشد شخصی">🌿 رشد شخصی</button>
+                        <button type="button" class="wizard-chip clickable" data-value="کار و تحصیل">💼 کار و تحصیل</button>
+                    </div>
+                </div>
+
+                <div class="wizard-step hidden" data-step="4">
+                    <h4>معمولاً کتاب بعدی رو از کجا پیدا می‌کنی؟</h4>
+                    <div class="wizard-chip-grid" id="wizard-discovery-grid" data-multi="false">
+                        <button type="button" class="wizard-chip clickable" data-value="پیشنهاد دوستان">👥 پیشنهاد دوستان</button>
+                        <button type="button" class="wizard-chip clickable" data-value="شبکه‌های اجتماعی">📱 شبکه‌های اجتماعی</button>
+                        <button type="button" class="wizard-chip clickable" data-value="پرفروش‌ها">🏆 لیست پرفروش‌ها</button>
+                        <button type="button" class="wizard-chip clickable" data-value="نقد و بررسی">📝 نقد و بررسی</button>
+                    </div>
+                </div>
+
+                <div class="wizard-nav">
+                    <button type="button" class="btn-secondary clickable hidden" id="wizard-back-btn">قبلی</button>
+                    <button type="button" class="btn-primary clickable" id="wizard-next-btn">بعدی</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading Story (Wrapped-style share card, built from real server data) -->
+    <div class="modal hidden" id="story-modal">
+        <div class="modal-content glass animate-slide-in story-modal-content">
+            <div class="modal-header">
+                <h3>استوری مطالعه من</h3>
+                <button class="close-modal-btn clickable" id="close-story-btn">&times;</button>
+            </div>
+            <div class="modal-body story-modal-body">
+                <div class="story-canvas-wrap">
+                    <canvas id="story-canvas" width="1080" height="1920"></canvas>
+                    <div class="story-loading" id="story-loading">در حال ساخت استوری...</div>
+                </div>
+                <div class="story-actions">
+                    <button type="button" class="btn-primary clickable" id="story-download-btn">⬇️ دانلود تصویر</button>
                 </div>
             </div>
         </div>

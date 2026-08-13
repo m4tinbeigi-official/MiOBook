@@ -206,6 +206,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         chrome.runtime.sendMessage({ action: "open-dashboard" });
     });
 
+    // --- Backup / Restore all data ---
+    const backupExportBtn = document.getElementById('backup-export-btn');
+    const backupImportBtn = document.getElementById('backup-import-btn');
+    const backupImportInput = document.getElementById('backup-import-input');
+
+    if (backupExportBtn) {
+        backupExportBtn.addEventListener('click', () => {
+            chrome.storage.local.get(null, (allData) => {
+                const backup = {
+                    app: 'miobook',
+                    exportedAt: Date.now(),
+                    data: allData
+                };
+                downloadBlob(JSON.stringify(backup, null, 2), `miobook-backup-${Date.now()}.json`, 'application/json');
+            });
+        });
+    }
+
+    if (backupImportBtn && backupImportInput) {
+        backupImportBtn.addEventListener('click', () => backupImportInput.click());
+
+        backupImportInput.addEventListener('change', () => {
+            const file = backupImportInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(reader.result);
+                    const data = parsed && parsed.app === 'miobook' && parsed.data ? parsed.data : parsed;
+                    if (!data || typeof data !== 'object') throw new Error('invalid backup');
+
+                    if (!confirm('میو! این کار داده‌های فعلی را با داده‌های فایل پشتیبان جایگزین می‌کند. ادامه می‌دهید؟')) return;
+
+                    chrome.storage.local.set(data, () => {
+                        alert('میو! بازیابی با موفقیت انجام شد. 🐾');
+                        location.reload();
+                    });
+                } catch (err) {
+                    console.error("Backup import failed:", err);
+                    alert('میو! فایل پشتیبان معتبر نیست.');
+                } finally {
+                    backupImportInput.value = '';
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
     // --- 2. Phase 2: Highlighting & Annotations (Marker Tab) ---
     const markerEmpty = document.getElementById('marker-empty');
     const highlightsList = document.getElementById('highlights-list');
@@ -213,6 +262,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const colorDots = document.querySelectorAll('.color-dot');
     const exportMarkdownBtn = document.getElementById('export-markdown-btn');
     const exportJsonBtn = document.getElementById('export-json-btn');
+    const highlightsSearch = document.getElementById('highlights-search');
+    let currentPageHighlights = [];
 
     chrome.storage.local.get(['activeColor'], (result) => {
         if (result.activeColor) {
@@ -251,14 +302,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         chrome.storage.local.get(['highlights'], (result) => {
             const list = result.highlights || [];
-            const pageHighlights = list.filter(h => h.url === activeTab.url);
+            currentPageHighlights = list.filter(h => h.url === activeTab.url);
 
-            if (pageHighlights.length === 0) {
+            if (currentPageHighlights.length === 0) {
+                if (highlightsSearch) highlightsSearch.classList.add('hidden');
                 showEmptyState("در این صفحه هنوز هایلایتی ثبت نشده است. متنی را در صفحه انتخاب کنید تا منوی هایلایت ظاهر شود.");
             } else {
-                renderHighlightsList(pageHighlights);
+                if (highlightsSearch) highlightsSearch.classList.remove('hidden');
+                applyHighlightsFilter();
             }
         });
+    }
+
+    function applyHighlightsFilter() {
+        const query = highlightsSearch ? highlightsSearch.value.trim().toLowerCase() : '';
+        const filtered = query
+            ? currentPageHighlights.filter(h =>
+                (h.text && h.text.toLowerCase().includes(query)) ||
+                (h.note && h.note.toLowerCase().includes(query)))
+            : currentPageHighlights;
+
+        if (filtered.length === 0) {
+            showEmptyState(query ? "میو! نتیجه‌ای برای این جستجو پیدا نشد." : "در این صفحه هنوز هایلایتی ثبت نشده است.");
+        } else {
+            renderHighlightsList(filtered);
+        }
+    }
+
+    if (highlightsSearch) {
+        highlightsSearch.addEventListener('input', applyHighlightsFilter);
     }
 
     function showEmptyState(message) {
@@ -291,14 +363,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${escapeHtml(h.text)}
                 </div>
                 <div class="highlight-note ${h.note ? '' : 'hidden'}" id="note-view-${h.id}">
-                    <span style="font-weight: 500;">یادداشت شما:</span>
+                    <span class="note-label">یادداشت شما:</span>
                     <span id="note-text-${h.id}">${escapeHtml(h.note)}</span>
                 </div>
                 <div class="note-edit-area hidden" id="note-edit-${h.id}">
                     <textarea class="note-input" id="note-textarea-${h.id}" rows="2" placeholder="یادداشت خود را اینجا بنویسید...">${h.note || ''}</textarea>
                     <div class="note-actions">
-                        <button class="btn-primary clickable note-save-btn" data-id="${h.id}" style="padding: 4px 10px; font-size: 11px;">ذخیره</button>
-                        <button class="btn-secondary clickable note-cancel-btn" data-id="${h.id}" style="padding: 4px 10px; font-size: 11px;">لغو</button>
+                        <button class="btn-primary clickable note-save-btn btn-sm" data-id="${h.id}">ذخیره</button>
+                        <button class="btn-secondary clickable note-cancel-btn btn-sm" data-id="${h.id}">لغو</button>
                     </div>
                 </div>
                 <div class="highlight-footer">
@@ -577,11 +649,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const timerFocusDurationInput = document.getElementById('timer-focus-duration');
+    const timerBreakDurationInput = document.getElementById('timer-break-duration');
+
     let timerInterval = null;
     let timerState = 'focus';
-    let durationSeconds = 25 * 60;
+    let focusMinutes = 25;
+    let breakMinutes = 5;
+    let durationSeconds = focusMinutes * 60;
     let secondsLeft = durationSeconds;
     let isRunning = false;
+
+    chrome.storage.local.get(['timerFocusMinutes', 'timerBreakMinutes'], (result) => {
+        if (result.timerFocusMinutes) focusMinutes = result.timerFocusMinutes;
+        if (result.timerBreakMinutes) breakMinutes = result.timerBreakMinutes;
+        if (timerFocusDurationInput) timerFocusDurationInput.value = focusMinutes;
+        if (timerBreakDurationInput) timerBreakDurationInput.value = breakMinutes;
+        if (!isRunning && timerState === 'focus') {
+            durationSeconds = focusMinutes * 60;
+            secondsLeft = durationSeconds;
+            updateTimerDisplay();
+        }
+    });
+
+    if (timerFocusDurationInput) {
+        timerFocusDurationInput.addEventListener('change', () => {
+            const val = Math.max(1, Math.min(180, parseInt(timerFocusDurationInput.value) || 25));
+            timerFocusDurationInput.value = val;
+            focusMinutes = val;
+            chrome.storage.local.set({ timerFocusMinutes: val });
+            if (!isRunning && timerState === 'focus') {
+                durationSeconds = focusMinutes * 60;
+                secondsLeft = durationSeconds;
+                updateTimerDisplay();
+            }
+        });
+    }
+
+    if (timerBreakDurationInput) {
+        timerBreakDurationInput.addEventListener('change', () => {
+            const val = Math.max(1, Math.min(60, parseInt(timerBreakDurationInput.value) || 5));
+            timerBreakDurationInput.value = val;
+            breakMinutes = val;
+            chrome.storage.local.set({ timerBreakMinutes: val });
+            if (!isRunning && timerState === 'break') {
+                durationSeconds = breakMinutes * 60;
+                secondsLeft = durationSeconds;
+                updateTimerDisplay();
+            }
+        });
+    }
 
     function formatTime(secs) {
         const mins = Math.floor(secs / 60);
@@ -666,12 +783,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             logReadingSession();
             timerState = 'break';
             timerStateLabel.innerText = 'زمان استراحت ☕';
-            secondsLeft = 5 * 60;
+            durationSeconds = breakMinutes * 60;
+            secondsLeft = durationSeconds;
             timerStartBtn.innerText = 'شروع استراحت';
         } else {
             timerState = 'focus';
             timerStateLabel.innerText = 'زمان مطالعه 📚';
-            secondsLeft = 25 * 60;
+            durationSeconds = focusMinutes * 60;
+            secondsLeft = durationSeconds;
             timerStartBtn.innerText = 'شروع مطالعه';
         }
 
@@ -719,7 +838,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         timerState = 'focus';
         timerStateLabel.innerText = 'زمان مطالعه 📚';
-        durationSeconds = 25 * 60;
+        durationSeconds = focusMinutes * 60;
         secondsLeft = durationSeconds;
 
         timerStartBtn.innerText = 'شروع مطالعه';

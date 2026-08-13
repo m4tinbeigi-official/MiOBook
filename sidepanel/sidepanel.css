@@ -27,7 +27,9 @@ body {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-sm);
-    object-fit: cover;
+    background: #fff;
+    padding: 3px;
+    object-fit: contain;
 }
 
 .brand h1 {
@@ -297,6 +299,16 @@ body {
     transition: color var(--transition-fast);
 }
 
+.add-book-btn {
+    font-size: 16px;
+}
+
+.sound-tab-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
 .action-link:hover {
     color: var(--accent-color);
 }
@@ -367,6 +379,11 @@ body {
     background: var(--bg-glass);
     backdrop-filter: blur(8px);
     width: 100%;
+}
+
+.quick-form-actions {
+    display: flex;
+    gap: 8px;
 }
 
 .quick-book-form h3 {
@@ -479,6 +496,10 @@ body {
     width: 100%;
 }
 
+.mt-2 {
+    margin-top: 8px;
+}
+
 .mt-3 {
     margin-top: 12px;
 }
@@ -487,10 +508,86 @@ body {
     display: none !important;
 }
 
-/* ===== PHASE 6: Tab Emoji Style ===== */
-.tab-link {
-    font-size: 18px;
+.empty-state-emoji {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+
+.note-label {
+    font-weight: 500;
+}
+
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+/* Search inputs */
+.search-input {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    font-family: var(--font-family);
+    font-size: 12px;
+    color: var(--text-primary);
+    outline: none;
+    margin-bottom: 12px;
+    direction: rtl;
+    transition: border-color var(--transition-fast);
+}
+
+.search-input:focus {
+    border-color: var(--accent-color);
+}
+
+/* Timer duration settings */
+.timer-duration-settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.duration-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.duration-field label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.duration-input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
     padding: 8px 10px;
+    font-family: var(--font-family);
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    text-align: center;
+    transition: border-color var(--transition-fast);
+}
+
+.duration-input:focus {
+    border-color: var(--accent-color);
+}
+
+/* ===== Tab Nav Icons ===== */
+.tab-link {
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tab-link svg {
+    display: block;
 }
 
 /* ===== Word Bank - Side Panel ===== */

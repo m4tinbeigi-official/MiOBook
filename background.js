@@ -1,5 +1,52 @@
 // Service Worker for MioBook Chrome Extension
 
+// Kept in sync with scripts/social-db.js — used here to mirror connector-imported
+// books (Taaghche/Fidibo) to the always-on server library, since this service
+// worker doesn't share a page context with dashboard.js.
+const MIOBOOK_SERVER_URL = "https://miobook-m4tinbeigiis-projects.vercel.app";
+
+async function syncNewBooksToServer(newBooks) {
+  if (!newBooks.length) return;
+  const { auth } = await chrome.storage.local.get(['auth']);
+  if (!auth || !auth.idToken) return;
+
+  const serverIdsByLocalId = {};
+
+  for (const book of newBooks) {
+    try {
+      const res = await fetch(`${MIOBOOK_SERVER_URL}/api/library`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.idToken}`
+        },
+        body: JSON.stringify({
+          title: book.title,
+          author: book.author,
+          coverUrl: book.coverUrl,
+          totalPages: book.totalPages,
+          currentPage: book.currentPage,
+          status: book.status
+        })
+      });
+      const saved = await res.json().catch(() => null);
+      if (res.ok && saved && saved.id) {
+        serverIdsByLocalId[book.id] = saved.id;
+      }
+    } catch (err) {
+      console.error('MioBook: connector book server sync error:', err);
+    }
+  }
+
+  if (Object.keys(serverIdsByLocalId).length === 0) return;
+
+  const { books = [] } = await chrome.storage.local.get(['books']);
+  books.forEach(b => {
+    if (serverIdsByLocalId[b.id]) b.serverId = serverIdsByLocalId[b.id];
+  });
+  await chrome.storage.local.set({ books });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log("MioBook Extension Installed successfully.");
 });
@@ -96,6 +143,7 @@ async function mergeConnectorBooks(provider, scrapedBooks) {
 
   let addedCount = 0;
   let updatedCount = 0;
+  const newlyAdded = [];
 
   scrapedBooks.forEach(item => {
     if (!item.title || !item.storeLink) return;
@@ -113,7 +161,7 @@ async function mergeConnectorBooks(provider, scrapedBooks) {
       }
       updatedCount++;
     } else {
-      books.push({
+      const newBook = {
         id: `book-${provider}-${Date.now()}-${addedCount}`,
         title: item.title,
         author: item.author || '',
@@ -124,7 +172,9 @@ async function mergeConnectorBooks(provider, scrapedBooks) {
         addedAt: Date.now(),
         storeLink: item.storeLink,
         storeSource: item.storeSource || provider
-      });
+      };
+      books.push(newBook);
+      newlyAdded.push(newBook);
       addedCount++;
     }
   });
@@ -136,6 +186,7 @@ async function mergeConnectorBooks(provider, scrapedBooks) {
   };
 
   await chrome.storage.local.set({ books, connectedAccounts });
+  syncNewBooksToServer(newlyAdded).catch(err => console.error('MioBook: connector server sync error:', err));
   return { addedCount, updatedCount, total: scrapedBooks.length };
 }
 
