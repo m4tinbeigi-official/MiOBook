@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "description": "دستیار مطالعه هوشمند، یادداشت‌نویسی حاشیه‌ای، زمان‌سنج تمرکز و ردیاب آمار مطالعه کاملا آفلاین.",
   "permissions": [
-    "sidePanel",
     "storage",
     "activeTab",
     "contextMenus",
@@ -17,11 +16,8 @@
   "background": {
     "service_worker": "background.js"
   },
-  "side_panel": {
-    "default_path": "sidepanel/sidepanel.html"
-  },
   "chrome_url_overrides": {
-    "newtab": "dashboard/dashboard.html"
+    "newtab": "dashboard/newtab.html"
   },
   "action": {
     "default_title": "باز کردن میو بوک",
@@ -43,6 +39,16 @@
       "matches": ["http://*/*", "https://*/*"],
       "js": ["scripts/content.js"],
       "css": ["styles/content-highlighter.css"]
+    },
+    {
+      "matches": ["https://*.taaghche.com/*"],
+      "js": ["scripts/connector-taaghche.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.fidibo.com/*"],
+      "js": ["scripts/connector-fidibo.js"],
+      "run_at": "document_idle"
     }
   ],
   "options_ui": {

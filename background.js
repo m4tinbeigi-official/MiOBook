@@ -2,12 +2,13 @@
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("MioBook Extension Installed successfully.");
-  
-  // Set panel behavior to open sidepanel on clicking the extension icon
-  if (chrome.sidePanel && typeof chrome.sidePanel.setPanelBehavior === 'function') {
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-      .catch((error) => console.error("Error setting panel behavior:", error));
-  }
+});
+
+// Open dashboard in a new tab when the extension icon is clicked
+chrome.action.onClicked.addListener(() => {
+  const dashboardUrl = chrome.runtime.getURL('dashboard/dashboard.html');
+  chrome.tabs.create({ url: dashboardUrl })
+    .catch((error) => console.error('Error opening dashboard tab:', error));
 });
 
 // Set up Context Menu for Highlighting (Phase 2 feature, but safe to prepare now)
@@ -58,7 +59,85 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true; // async response
   }
+
+  if (message.action === "connector-status") {
+    updateConnectorStatus(message.provider, message.loggedIn)
+      .then(() => sendResponse({ success: true }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (message.action === "connector-sync") {
+    mergeConnectorBooks(message.provider, message.books || [])
+      .then(result => sendResponse({ success: true, ...result }))
+      .catch(err => {
+        console.error("Connector sync error:", err);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
 });
+
+// --- Fidibo / Taaghche Account Connector ---
+
+async function updateConnectorStatus(provider, loggedIn) {
+  if (!provider) return;
+  const { connectedAccounts = {} } = await chrome.storage.local.get(['connectedAccounts']);
+  connectedAccounts[provider] = {
+    ...(connectedAccounts[provider] || {}),
+    loggedIn: !!loggedIn
+  };
+  await chrome.storage.local.set({ connectedAccounts });
+}
+
+async function mergeConnectorBooks(provider, scrapedBooks) {
+  const { books = [], connectedAccounts = {} } = await chrome.storage.local.get(['books', 'connectedAccounts']);
+  const existingLinks = new Set(books.map(b => b.storeLink).filter(Boolean));
+
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  scrapedBooks.forEach(item => {
+    if (!item.title || !item.storeLink) return;
+
+    const status = item.status || (item.progressPct === 100 ? 'read' : (item.progressPct > 0 ? 'reading' : 'toRead'));
+    const totalPages = item.totalPages || 0;
+    const existing = books.find(b => b.storeLink === item.storeLink);
+
+    if (existing) {
+      existing.status = status;
+      if (totalPages) existing.totalPages = totalPages;
+      if (status === 'read') {
+        existing.completedAt = existing.completedAt || Date.now();
+        existing.currentPage = existing.totalPages || existing.currentPage || 0;
+      }
+      updatedCount++;
+    } else {
+      books.push({
+        id: `book-${provider}-${Date.now()}-${addedCount}`,
+        title: item.title,
+        author: item.author || '',
+        totalPages,
+        currentPage: status === 'read' ? totalPages : 0,
+        status,
+        coverUrl: item.coverUrl || '',
+        addedAt: Date.now(),
+        storeLink: item.storeLink,
+        storeSource: item.storeSource || provider
+      });
+      addedCount++;
+    }
+  });
+
+  connectedAccounts[provider] = {
+    loggedIn: true,
+    lastSync: Date.now(),
+    bookCount: scrapedBooks.length
+  };
+
+  await chrome.storage.local.set({ books, connectedAccounts });
+  return { addedCount, updatedCount, total: scrapedBooks.length };
+}
 
 // --- API Search Helper Functions in Background ---
 

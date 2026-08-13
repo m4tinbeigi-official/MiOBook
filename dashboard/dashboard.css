@@ -411,6 +411,30 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 24px;
+    transition: gap 0.2s ease;
+}
+
+/* Shrinks covers automatically once the shelf gets crowded, so a growing
+   collection keeps fitting without scrolling forever. */
+.library-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 12px;
+}
+.library-grid.compact .book-card {
+    padding: 8px;
+}
+.library-grid.compact .bc-cover {
+    margin-bottom: 8px;
+}
+.library-grid.compact .bc-title {
+    font-size: 11px;
+}
+.library-grid.compact .bc-author {
+    font-size: 9px;
+    margin-bottom: 4px;
+}
+.library-grid.compact .bc-stars {
+    font-size: 9px;
 }
 
 .book-card {
@@ -429,6 +453,19 @@ body {
     transform: translateY(-4px);
     box-shadow: var(--shadow-card);
     border-color: var(--border-glass);
+}
+
+/* Drag-to-reorder states */
+.book-card {
+    cursor: grab;
+}
+.book-card.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+.book-card.drag-over {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--accent-color) inset;
 }
 
 .bc-cover {

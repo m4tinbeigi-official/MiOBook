@@ -37,6 +37,43 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentTheme = changes.theme.newValue;
             applyTheme(currentTheme);
         }
+        if (area === 'local' && changes.connectedAccounts) {
+            renderConnectorStatus(changes.connectedAccounts.newValue || {});
+        }
+    });
+
+    // --- Fidibo / Taaghche Connector UI ---
+    function renderConnectorStatus(connectedAccounts) {
+        const providers = { taaghche: 'طاقچه', fidibo: 'فیدیبو' };
+        Object.keys(providers).forEach(provider => {
+            const badge = document.getElementById(`connector-status-${provider}`);
+            if (!badge) return;
+            const info = connectedAccounts[provider];
+            if (!info) {
+                badge.textContent = 'متصل نشده';
+                return;
+            }
+            if (info.lastSync) {
+                const date = new Date(info.lastSync).toLocaleDateString('fa-IR');
+                badge.textContent = `همگام شد (${info.bookCount || 0} کتاب) - ${date}`;
+                badge.style.background = 'rgba(47,111,79,0.25)';
+            } else if (info.loggedIn) {
+                badge.textContent = 'وارد شده - آماده همگام‌سازی';
+            } else {
+                badge.textContent = 'متصل نشده';
+            }
+        });
+    }
+
+    chrome.storage.local.get(['connectedAccounts'], result => {
+        renderConnectorStatus(result.connectedAccounts || {});
+    });
+
+    document.querySelectorAll('.connector-open-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const url = btn.dataset.url;
+            if (url) chrome.tabs.create({ url });
+        });
     });
 
     function applyTheme(theme) {
@@ -311,8 +348,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 libraryBooks = books.filter(b => b.status === activeFilter);
             }
 
-            // Sort by added date descending
-            libraryBooks.sort((a, b) => b.addedAt - a.addedAt);
+            // Sort by manual order if set, otherwise by added date descending
+            const hasCustomOrder = libraryBooks.some(b => typeof b.sortOrder === 'number');
+            if (hasCustomOrder) {
+                libraryBooks.sort((a, b) => {
+                    const oa = typeof a.sortOrder === 'number' ? a.sortOrder : Infinity;
+                    const ob = typeof b.sortOrder === 'number' ? b.sortOrder : Infinity;
+                    if (oa !== ob) return oa - ob;
+                    return b.addedAt - a.addedAt;
+                });
+            } else {
+                libraryBooks.sort((a, b) => b.addedAt - a.addedAt);
+            }
 
             // Separate Currently Reading books
             const readingBooks = books.filter(b => b.status === 'reading');
@@ -349,6 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const card = document.createElement('div');
             card.className = 'reading-card';
+            card.dataset.id = book.id;
             
             const spineStyle = getSpineColor(book.title);
             const coverBg = book.coverUrl ? `url(${book.coverUrl})` : spineStyle.bg;
@@ -375,17 +423,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const LIBRARY_COMPACT_THRESHOLD = 18;
+    let draggedBookId = null;
+
     function renderLibraryGrid(booksList) {
         if (!bookshelfContainer) return;
         bookshelfContainer.innerHTML = '';
 
+        bookshelfContainer.classList.toggle('compact', booksList.length > LIBRARY_COMPACT_THRESHOLD);
+
         booksList.forEach(book => {
             const card = document.createElement('div');
             card.className = 'book-card clickable';
-            
+            card.dataset.id = book.id;
+            card.draggable = true;
+
             const spineStyle = getSpineColor(book.title);
             const coverBg = book.coverUrl ? `url(${book.coverUrl})` : spineStyle.bg;
-            
+
             card.innerHTML = `
                 <div class="bc-cover" style="background: ${coverBg};"></div>
                 <h3 class="bc-title">${escapeHtml(book.title)}</h3>
@@ -394,12 +449,66 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ★★★★★
                 </div>
             `;
-            
+
             card.addEventListener('click', () => {
+                if (bookshelfContainer.classList.contains('reordering')) return;
                 openBookDetailsModal(book);
             });
-            
+
+            card.addEventListener('dragstart', (e) => {
+                draggedBookId = book.id;
+                card.classList.add('dragging');
+                bookshelfContainer.classList.add('reordering');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                bookshelfContainer.classList.remove('reordering');
+                bookshelfContainer.querySelectorAll('.book-card.drag-over').forEach(el => el.classList.remove('drag-over'));
+                draggedBookId = null;
+            });
+            card.addEventListener('dragover', (e) => {
+                if (!draggedBookId || draggedBookId === book.id) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                card.classList.add('drag-over');
+            });
+            card.addEventListener('dragleave', () => {
+                card.classList.remove('drag-over');
+            });
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-over');
+                if (!draggedBookId || draggedBookId === book.id) return;
+                reorderBooks(draggedBookId, book.id);
+            });
+
             bookshelfContainer.appendChild(card);
+        });
+    }
+
+    function reorderBooks(draggedId, targetId) {
+        chrome.storage.local.get(['books'], (result) => {
+            const books = result.books || [];
+            const ordered = books.slice().sort((a, b) => {
+                const oa = typeof a.sortOrder === 'number' ? a.sortOrder : Infinity;
+                const ob = typeof b.sortOrder === 'number' ? b.sortOrder : Infinity;
+                if (oa !== ob) return oa - ob;
+                return b.addedAt - a.addedAt;
+            });
+
+            const fromIndex = ordered.findIndex(b => b.id === draggedId);
+            const toIndex = ordered.findIndex(b => b.id === targetId);
+            if (fromIndex === -1 || toIndex === -1) return;
+
+            const [moved] = ordered.splice(fromIndex, 1);
+            ordered.splice(toIndex, 0, moved);
+
+            ordered.forEach((b, i) => { b.sortOrder = i; });
+
+            chrome.storage.local.set({ books: ordered }, () => {
+                loadBookshelf();
+            });
         });
     }
 
@@ -715,17 +824,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchBtn = document.getElementById('book-search-btn');
     const searchResultsList = document.getElementById('search-results-list');
 
+    let searchDebounceTimer = null;
+
     if (searchInput) {
         // Trigger search on Enter keypress
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                clearTimeout(searchDebounceTimer);
                 if (searchBtn) {
                     searchBtn.click();
                 } else {
                     performBookSearch();
                 }
             }
+        });
+
+        // Live (AJAX-style) search while the user types
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            const query = searchInput.value.trim();
+
+            if (!query) {
+                if (searchResultsList) {
+                    searchResultsList.innerHTML = '';
+                    searchResultsList.classList.add('hidden');
+                }
+                return;
+            }
+
+            if (query.length < 2) return;
+
+            searchDebounceTimer = setTimeout(() => {
+                performBookSearch();
+            }, 400);
         });
     }
 
@@ -735,13 +867,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    let searchRequestId = 0;
+
     async function performBookSearch() {
         const query = searchInput.value.trim();
         if (!query) return;
 
+        const requestId = ++searchRequestId;
+
         if (searchBtn) {
             searchBtn.innerText = 'جستجو...';
             searchBtn.disabled = true;
+        }
+
+        if (searchResultsList) {
+            searchResultsList.innerHTML = '<div style="padding: 12px; text-align: center; font-size:11px; color: var(--text-secondary);">در حال جستجو...</div>';
+            searchResultsList.classList.remove('hidden');
         }
 
         try {
@@ -751,6 +892,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 searchFidiboAPI(query),
                 searchOpenLibraryAPI(query)
             ]);
+
+            if (requestId !== searchRequestId) return; // a newer search superseded this one
 
             if (searchBtn) {
                 searchBtn.innerText = 'جستجو';
@@ -808,6 +951,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 searchResultsList.classList.remove('hidden');
             }
         } catch (err) {
+            if (requestId !== searchRequestId) return; // a newer search superseded this one
             console.error("Unified search failed:", err);
             if (searchBtn) {
                 searchBtn.innerText = 'جستجو';
@@ -1486,14 +1630,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Update Header Title
             if (pageTitleHeader) {
-                const titles = {
+                const lang = document.documentElement.lang === 'en' ? 'en' : 'fa';
+                const titles = lang === 'en' ? {
                     dashboard: 'Dashboard',
                     library: 'My Library',
                     explore: 'Explore Community',
                     wishlist: 'Wishlist',
+                    tools: 'Reading Tools',
                     profile: 'User Profile'
+                } : {
+                    dashboard: 'داشبورد',
+                    library: 'کتابخانه من',
+                    explore: 'کاوش جامعه',
+                    wishlist: 'لیست علاقه‌مندی‌ها',
+                    tools: 'ابزارهای مطالعه',
+                    profile: 'پروفایل کاربری'
                 };
-                pageTitleHeader.innerText = titles[targetTab] || 'MioBook';
+                pageTitleHeader.innerText = titles[targetTab] || 'میو بوک';
             }
 
             if (targetTab === 'explore') {

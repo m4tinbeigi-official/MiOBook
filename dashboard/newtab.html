@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>میو بوک | کتابخانه</title>
+    <link rel="stylesheet" href="../styles/shared.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        .newtab-body {
+            min-height: 100vh;
+            padding: 32px 32px 48px;
+            box-sizing: border-box;
+        }
+        .newtab-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 300px;
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: start;
+        }
+        @media (max-width: 1100px) {
+            .newtab-grid { grid-template-columns: 1fr; }
+        }
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+        }
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 14px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Hero search */
+        .hero-search-wrap {
+            position: relative;
+            max-width: 640px;
+            margin: 0 auto 24px;
+        }
+        .hero-search-wrap .search-results {
+            top: 60px;
+            right: 0;
+            left: 0;
+            width: auto;
+        }
+        .hero-search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            padding: 14px 20px;
+        }
+        .hero-search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: var(--font-family);
+        }
+        .hero-search-box svg { color: var(--text-secondary); flex-shrink: 0; }
+        .hero-search-hint {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* Quick links */
+        .quick-links-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+        .quick-link-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 100px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 12px;
+            position: relative;
+        }
+        .quick-link-chip:hover { background: var(--bg-card-hover); }
+        .quick-link-remove {
+            display: none;
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e63946;
+            color: #fff;
+            font-size: 10px;
+            line-height: 16px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .quick-link-chip:hover .quick-link-remove { display: block; }
+        .quick-link-add {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 1px dashed var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Calendar */
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .calendar-nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 8px;
+        }
+        .calendar-month-label { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+        }
+        .calendar-dow { font-size: 10px; color: var(--text-muted); padding-bottom: 4px; }
+        .calendar-day {
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        .calendar-day.today { border: 1px solid var(--accent-color); color: var(--text-primary); }
+        .calendar-day.has-log { background: var(--accent-color); color: #fff; font-weight: 700; }
+        .calendar-day.empty { visibility: hidden; }
+
+        /* Quote */
+        .quote-card { text-align: center; margin-bottom: 20px; }
+        .quote-card p { font-size: 13px; color: var(--text-primary); line-height: 1.9; margin: 0 0 8px; }
+        .quote-card span { font-size: 11px; color: var(--accent-color); font-weight: 600; }
+
+        /* Stat tiles */
+        .stat-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-tile { background: var(--bg-card); border-radius: var(--radius-sm); padding: 10px; text-align: center; }
+        .stat-tile b { display: block; font-size: 16px; color: var(--text-primary); }
+        .stat-tile span { font-size: 10px; color: var(--text-secondary); }
+
+        /* Right-panel lists */
+        .side-list { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+        .side-list-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+        .side-list-item:hover { background: var(--bg-card-hover); }
+        .side-list-cover {
+            width: 28px; height: 38px; border-radius: 4px; background-size: cover; background-position: center; flex-shrink: 0;
+        }
+        .side-list-title { font-size: 12px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .side-list-empty { font-size: 11px; color: var(--text-muted); padding: 4px 0 12px; }
+    </style>
+</head>
+<body data-theme="dark" class="newtab-body">
+
+    <div class="newtab-grid">
+
+        <!-- RIGHT PANEL (first in DOM = rightmost in RTL) -->
+        <aside class="panel-card">
+            <div class="quote-card">
+                <p id="hero-quote-text"></p>
+                <span id="hero-quote-author"></span>
+            </div>
+
+            <p class="panel-title">📊 آمار مطالعه</p>
+            <div class="stat-tiles">
+                <div class="stat-tile"><b id="stat-read">۰</b><span>خوانده‌شده</span></div>
+                <div class="stat-tile"><b id="stat-reading">۰</b><span>در حال مطالعه</span></div>
+                <div class="stat-tile"><b id="stat-toread">۰</b><span>می‌خواهم بخوانم</span></div>
+                <div class="stat-tile"><b id="stat-week-minutes">۰</b><span>دقیقه این هفته</span></div>
+            </div>
+
+            <p class="panel-title">📖 در حال مطالعه</p>
+            <ul class="side-list" id="reading-side-list"></ul>
+            <p class="side-list-empty hidden" id="reading-side-empty">چیزی در حال مطالعه نداری.</p>
+
+            <p class="panel-title">🔖 می‌خواهم بخوانم</p>
+            <ul class="side-list" id="toread-side-list"></ul>
+            <p class="side-list-empty hidden" id="toread-side-empty">لیستت خالیه.</p>
+        </aside>
+
+        <!-- CENTER -->
+        <main>
+            <div class="hero-search-wrap">
+                <div class="hero-search-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="book-search-input" placeholder="جستجوی کتاب، نویسنده یا هر چیزی در گوگل...">
+                </div>
+                <div class="search-results hidden" id="search-results-list"></div>
+                <button id="book-search-btn" class="hidden">جستجو</button>
+                <p class="hero-search-hint">نتیجه‌ی کتابخانه رو نشون میده؛ Enter بزن تا در گوگل هم جستجو کنی</p>
+            </div>
+
+            <div class="quick-links-row" id="quick-links-row"></div>
+
+            <div class="dashboard-scroll-area" style="height: auto; overflow: visible;">
+                <div id="dashboard-view" class="tab-view-container">
+                    <!-- Currently Reading Section (kept for dashboard.js compatibility; hidden, shown via side list instead) -->
+                    <section class="dashboard-section currently-reading-section hidden" id="currently-reading-section">
+                        <div class="section-header"><h2 data-i18n="dash.currentlyReading">در حال مطالعه</h2></div>
+                        <div class="reading-cards-container" id="currently-reading-container"></div>
+                    </section>
+
+                    <!-- My Library Section -->
+                    <section class="dashboard-section my-library-section">
+                        <div class="section-header">
+                            <h2 data-i18n="dash.myLibrary">کتابخانه من</h2>
+                        </div>
+
+                        <div class="shelf-filters">
+                            <button class="filter-btn active" data-filter="all" data-i18n="dash.filterAll">همه</button>
+                            <button class="filter-btn" data-filter="reading" data-i18n="dash.filterReading">در حال مطالعه</button>
+                            <button class="filter-btn" data-filter="read" data-i18n="dash.filterRead">خوانده‌شده</button>
+                            <button class="filter-btn" data-filter="toRead" data-i18n="dash.filterToRead">می‌خواهم بخوانم</button>
+                            <button class="btn-primary clickable add-manual-btn" id="add-book-btn" data-i18n="dash.addBook">
+                                + افزودن کتاب
+                            </button>
+                        </div>
+
+                        <div class="library-grid" id="bookshelf-container"></div>
+
+                        <div class="empty-state hidden" id="shelf-empty">
+                            <div style="font-size: 48px; margin-bottom: 16px;">🐈‍⬛</div>
+                            <p>میو! اینجا خیلی خلوته، هنوز کتابی اضافه نکردی.</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <!-- LEFT PANEL (calendar) -->
+        <aside class="panel-card">
+            <div class="calendar-header">
+                <button class="calendar-nav-btn" id="cal-prev-btn">›</button>
+                <span class="calendar-month-label" id="cal-month-label"></span>
+                <button class="calendar-nav-btn" id="cal-next-btn">‹</button>
+            </div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+        </aside>
+
+    </div>
+
+    <!-- Modal for Adding Manual Book -->
+    <div class="modal hidden" id="add-book-modal">
+        <div class="modal-content glass animate-slide-in">
+            <div class="modal-header">
+                <h3>ثبت کتاب جدید به صورت دستی</h3>
+                <button class="close-modal-btn clickable" id="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="manual-book-form" id="manual-book-form">
+                    <div class="form-group">
+                        <label for="book-title">عنوان کتاب *</label>
+                        <input type="text" id="book-title" required placeholder="مثال: شاهنامه فردوسی">
+                    </div>
+                    <div class="form-group">
+                        <label for="book-author">نویسنده / مترجم</label>
+                        <input type="text" id="book-author" placeholder="مثال: ابوالقاسم فردوسی">
+                    </div>
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="book-pages">تعداد کل صفحات</label>
+                            <input type="number" id="book-pages" min="1" placeholder="مثال: ۶۰۰">
+                        </div>
+                        <div class="form-group">
+                            <label for="book-status">وضعیت مطالعه</label>
+                            <select id="book-status">
+                                <option value="toRead">می‌خواهم بخوانم</option>
+                                <option value="reading">در حال مطالعه</option>
+                                <option value="read">خوانده شده</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary clickable w-100">ثبت و ذخیره در کتابخانه</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Book Details & Progress Update -->
+    <div class="modal hidden" id="book-details-modal">
+        <div class="modal-content glass animate-slide-in">
+            <div class="modal-header">
+                <h3 id="details-book-title">عنوان کتاب</h3>
+                <button class="close-modal-btn clickable" id="close-details-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="book-details-card">
+                    <div class="bd-cover-container" id="details-book-cover"></div>
+                    <div class="bd-info">
+                        <h4 id="details-book-author">نویسنده</h4>
+                        <div class="bd-status-badge" id="details-book-status">در حال مطالعه</div>
+                        <div class="bd-progress-bar-wrapper">
+                            <div class="bd-progress-info">
+                                <span>میزان پیشرفت</span>
+                                <strong id="details-progress-pct">۰٪</strong>
+                            </div>
+                            <div class="bd-progress-bg">
+                                <div class="bd-progress-fill" id="details-progress-fill" style="width: 0%;"></div>
+                            </div>
+                            <div class="bd-progress-pages" id="details-progress-pages">صفحه ۰ از ۰</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bookstore-comparison-section" id="details-bookstore-comparison">
+                    <div class="bookstore-comparison-title">
+                        <span>🛒 نسخه دیجیتال و قیمت در طاقچه و فیدیبو</span>
+                    </div>
+                    <div class="bookstore-list" id="details-bookstore-list">
+                        <div style="font-size: 11px; text-align: center; color: var(--text-muted);">در حال جستجوی موجودی در طاقچه و فیدیبو...</div>
+                    </div>
+                </div>
+
+                <div class="divider">به‌روزرسانی پیشرفت مطالعه</div>
+
+                <div class="progress-update-form">
+                    <div class="form-group">
+                        <label for="update-current-page">اکنون در کدام صفحه هستید؟</label>
+                        <div class="form-group-row">
+                            <input type="number" id="update-current-page" min="0" placeholder="صفحه...">
+                            <button class="btn-primary" id="save-progress-btn">ذخیره تغییرات</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer-danger">
+                    <button class="btn-danger w-100" id="details-delete-book-btn">🗑️ حذف این کتاب از کتابخانه</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/i18n.js"></script>
+    <script src="../scripts/social-db.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="newtab-extra.js"></script>
+</body>
+</html>

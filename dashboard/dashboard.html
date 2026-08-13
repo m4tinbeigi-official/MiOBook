@@ -25,19 +25,23 @@
             <ul class="nav-links">
                 <li class="nav-item active" data-tab="dashboard">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span>Dashboard 🐾</span>
+                    <span data-i18n="nav.dashboard">داشبورد 🐾</span>
                 </li>
                 <li class="nav-item" data-tab="library">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path></svg>
-                    <span>My Library 🐾</span>
+                    <span data-i18n="nav.library">کتابخانه من 🐾</span>
                 </li>
                 <li class="nav-item" data-tab="explore">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span>Explore 🐾</span>
+                    <span data-i18n="nav.explore">کاوش 🐾</span>
                 </li>
                 <li class="nav-item" data-tab="wishlist">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                    <span>Wishlist 🐾</span>
+                    <span data-i18n="nav.wishlist">لیست علاقه‌مندی‌ها 🐾</span>
+                </li>
+                <li class="nav-item" data-tab="tools">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+                    <span data-i18n="nav.tools">ابزارهای مطالعه 🐾</span>
                 </li>
             </ul>
 
@@ -46,11 +50,11 @@
             <ul class="nav-links">
                 <li class="nav-item" id="theme-toggle-btn" data-tab="settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Settings 🐾</span>
+                    <span data-i18n="nav.settings">تنظیمات 🐾</span>
                 </li>
                 <li class="nav-item" id="profile-nav-btn" data-tab="profile">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <span>Profile 🐾</span>
+                    <span data-i18n="nav.profile">پروفایل 🐾</span>
                 </li>
             </ul>
         </nav>
@@ -60,18 +64,18 @@
             
             <header class="top-header">
                 <div class="page-title">
-                    <h1>Dashboard</h1>
+                    <h1 data-i18n="dash.title">داشبورد</h1>
                 </div>
                 <div class="header-actions">
                     <div class="search-box">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" id="book-search-input" placeholder="Search book or author...">
+                        <input type="text" id="book-search-input" data-i18n-placeholder="dash.searchPlaceholder" placeholder="جستجوی کتاب یا نویسنده...">
                         <div class="search-results hidden" id="search-results-list"></div>
                         <button id="book-search-btn" class="hidden">جستجو</button>
                     </div>
                     <div class="profile-avatar">
-                        <img src="https://ui-avatars.com/api/?name=Olivia+M&background=random" alt="Profile">
-                        <span>Olivia M.</span>
+                        <img src="https://ui-avatars.com/api/?name=%DA%A9%D8%AA%D8%A7%D8%A8%D8%AE%D9%88%D8%A7%D9%86&background=random" alt="پروفایل">
+                        <span>کتاب‌خوان</span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                 </div>
@@ -81,10 +85,19 @@
                 
                 <!-- Dashboard Tab View -->
                 <div id="dashboard-view" class="tab-view-container">
+                    <!-- Greeting / Clock Widget -->
+                    <section class="dashboard-section glass" style="padding: 20px 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; direction: rtl; text-align: right;">
+                        <p id="greeting-text" style="margin: 0; font-size: 15px; font-weight: 600; color: var(--text-primary);"></p>
+                        <div style="text-align: left;">
+                            <div id="clock-time" style="font-size: 20px; font-weight: 800; color: var(--accent-color);"></div>
+                            <div id="clock-date" style="font-size: 11px; color: var(--text-secondary);"></div>
+                        </div>
+                    </section>
+
                     <!-- Currently Reading Section -->
                     <section class="dashboard-section currently-reading-section hidden" id="currently-reading-section">
                         <div class="section-header">
-                            <h2>Currently Reading</h2>
+                            <h2 data-i18n="dash.currentlyReading">در حال مطالعه</h2>
                         </div>
                         <div class="reading-cards-container" id="currently-reading-container">
                             <!-- Dynamic reading cards injected here -->
@@ -94,17 +107,17 @@
                     <!-- My Library Section -->
                     <section class="dashboard-section my-library-section">
                         <div class="section-header">
-                            <h2>My Library</h2>
-                            <a href="#" class="see-all-link">See all</a>
+                            <h2 data-i18n="dash.myLibrary">کتابخانه من</h2>
+                            <a href="#" class="see-all-link" data-i18n="dash.seeAll">مشاهده همه</a>
                         </div>
-                        
+
                         <div class="shelf-filters">
-                            <button class="filter-btn active" data-filter="all">All</button>
-                            <button class="filter-btn" data-filter="reading">Reading</button>
-                            <button class="filter-btn" data-filter="read">Completed</button>
-                            <button class="filter-btn" data-filter="toRead">To Read</button>
-                            <button class="btn-primary clickable add-manual-btn" id="add-book-btn">
-                                + Add Book
+                            <button class="filter-btn active" data-filter="all" data-i18n="dash.filterAll">همه</button>
+                            <button class="filter-btn" data-filter="reading" data-i18n="dash.filterReading">در حال مطالعه</button>
+                            <button class="filter-btn" data-filter="read" data-i18n="dash.filterRead">خوانده‌شده</button>
+                            <button class="filter-btn" data-filter="toRead" data-i18n="dash.filterToRead">می‌خواهم بخوانم</button>
+                            <button class="btn-primary clickable add-manual-btn" id="add-book-btn" data-i18n="dash.addBook">
+                                + افزودن کتاب
                             </button>
                         </div>
 
@@ -185,9 +198,164 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div style="max-width: 480px; margin: 16px auto 0;">
+                            <a href="../options/language.html" target="_blank" class="btn-secondary clickable" style="display: block; text-align: center; padding: 8px 16px; border-radius: 100px; font-weight: bold; width: 100%; text-decoration: none;">
+                                🌐 زبان رابط کاربری
+                            </a>
+                        </div>
                     </section>
                 </div>
-                
+
+                <!-- Reading Tools Tab View -->
+                <div id="tools-view" class="tab-view-container hidden" style="padding: 0 8px; direction: rtl; text-align: right;">
+
+                    <!-- Daily Quote -->
+                    <section class="dashboard-section glass" style="padding: 20px 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px; text-align: center;">
+                        <p id="quote-text" style="font-size: 14px; color: var(--text-primary); margin: 0 0 8px 0; line-height: 1.8;"></p>
+                        <span id="quote-author" style="font-size: 12px; color: var(--accent-color); font-weight: 600;"></span>
+                    </section>
+
+                    <!-- Reading Goal / Challenge -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>🎯 چالش سالانه مطالعه</h2>
+                        </div>
+
+                        <div id="goals-setup-card" class="hidden" style="text-align: center; padding: 12px 0;">
+                            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">چند کتاب می‌خواهی امسال بخوانی؟</p>
+                            <div class="form-group-row" style="justify-content: center; align-items: center; gap: 8px;">
+                                <input type="number" id="goal-book-count" min="1" placeholder="مثال: ۱۲" style="max-width: 120px;">
+                                <button class="btn-primary clickable" id="save-goal-btn">ثبت هدف</button>
+                            </div>
+                        </div>
+
+                        <div id="goals-progress-area" class="hidden" style="display: flex; align-items: center; gap: 32px; flex-wrap: wrap;">
+                            <div style="position: relative; width: 110px; height: 110px; flex-shrink: 0;">
+                                <svg width="110" height="110" viewBox="0 0 110 110" style="transform: rotate(-90deg);">
+                                    <circle cx="55" cy="55" r="48" fill="none" stroke="var(--border-color)" stroke-width="10"></circle>
+                                    <circle id="goal-ring-fill" cx="55" cy="55" r="48" fill="none" stroke="var(--accent-color)" stroke-width="10" stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6" style="transition: stroke-dashoffset 0.6s ease;"></circle>
+                                </svg>
+                                <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <span id="goal-read-count" style="font-size: 22px; font-weight: 800; color: var(--text-primary);">۰</span>
+                                    <span style="font-size: 10px; color: var(--text-secondary);">از <span id="goal-target-label">۰</span></span>
+                                </div>
+                            </div>
+                            <div style="flex: 1; min-width: 220px;">
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
+                                    <div class="glass" style="padding: 10px; border-radius: var(--radius-md); text-align: center;">
+                                        <div id="g-read" style="font-size: 16px; font-weight: 700;">۰</div>
+                                        <div style="font-size: 11px; color: var(--text-secondary);">خوانده‌شده</div>
+                                    </div>
+                                    <div class="glass" style="padding: 10px; border-radius: var(--radius-md); text-align: center;">
+                                        <div id="g-remaining" style="font-size: 16px; font-weight: 700;">۰</div>
+                                        <div style="font-size: 11px; color: var(--text-secondary);">باقی‌مانده</div>
+                                    </div>
+                                    <div class="glass" style="padding: 10px; border-radius: var(--radius-md); text-align: center;">
+                                        <div id="g-pct" style="font-size: 16px; font-weight: 700;">۰٪</div>
+                                        <div style="font-size: 11px; color: var(--text-secondary);">پیشرفت</div>
+                                    </div>
+                                </div>
+                                <button class="btn-secondary clickable" id="edit-goal-btn" style="font-size: 12px;">تغییر هدف</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Reading Statistics -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h2>📊 آمار مطالعه</h2>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-secondary clickable stat-tab-btn active" data-chart="weekly" style="font-size: 11px; padding: 6px 12px;">هفتگی</button>
+                                <button class="btn-secondary clickable stat-tab-btn" data-chart="distribution" style="font-size: 11px; padding: 6px 12px;">کتابخانه</button>
+                            </div>
+                        </div>
+                        <div id="weekly-chart-area" style="height: 160px;">
+                            <div id="weekly-chart" style="width: 100%; height: 100%;"></div>
+                        </div>
+                        <div id="dist-chart-area" class="hidden" style="height: 160px;">
+                            <div id="monthly-chart" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </section>
+
+                    <!-- Store Account Connectors -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 8px;">
+                            <h2>🔗 اتصال به فیدیبو و طاقچه</h2>
+                        </div>
+                        <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 16px;">
+                            چیزی برای وارد کردن نیست. فقط وارد سایت طاقچه یا فیدیبو شو و لاگین کن؛ وقتی به صفحه کتابخانه‌ات رسیدی، دکمه شناور «افزودن کتابخانه به میوبوک» رو بزن تا کتاب‌ها و پیشرفت مطالعه‌ات این‌جا اضافه بشه.
+                        </p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                            <div class="glass" style="padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                    <strong>طاقچه</strong>
+                                    <span id="connector-status-taaghche" class="connector-badge" style="font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,0.06);">وضعیت نامشخص</span>
+                                </div>
+                                <button class="btn-secondary clickable connector-open-btn" data-url="https://taaghche.com" style="font-size: 12px; width: 100%;">ورود به طاقچه</button>
+                            </div>
+                            <div class="glass" style="padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                    <strong>فیدیبو</strong>
+                                    <span id="connector-status-fidibo" class="connector-badge" style="font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,0.06);">وضعیت نامشخص</span>
+                                </div>
+                                <button class="btn-secondary clickable connector-open-btn" data-url="https://fidibo.com" style="font-size: 12px; width: 100%;">ورود به فیدیبو</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Word Bank -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h2>📖 بانک کلمات</h2>
+                            <button class="btn-secondary clickable hidden" id="dash-export-words-btn" style="font-size: 12px;">⬇️ خروجی CSV</button>
+                        </div>
+                        <input type="text" id="wb-search-input" placeholder="جستجو در کلمات ذخیره‌شده..." style="width: 100%; margin-bottom: 16px; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-primary);">
+                        <div id="wb-empty" class="empty-state hidden" style="text-align: center; padding: 20px;">
+                            <div style="font-size: 40px; margin-bottom: 12px;">🐾</div>
+                            <p style="color: var(--text-secondary); font-size: 13px;">هنوز کلمه‌ای ذخیره نکرده‌ای.</p>
+                        </div>
+                        <div id="wb-mini-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    </section>
+
+                    <!-- Goodreads Import -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>📥 درون‌ریزی از Goodreads</h2>
+                        </div>
+                        <label class="btn-secondary clickable" style="font-size: 12px; cursor: pointer; display: inline-block;">
+                            انتخاب فایل CSV
+                            <input type="file" id="goodreads-csv-file" accept=".csv" style="display: none;">
+                        </label>
+                        <p id="import-status" style="font-size: 12px; margin-top: 10px; color: var(--text-secondary);"></p>
+                    </section>
+
+                    <!-- Backup & Restore -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 24px;">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>💾 پشتیبان‌گیری و بازیابی</h2>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button class="btn-primary clickable" id="backup-all-btn" style="font-size: 12px;">⬇️ دانلود پشتیبان کامل</button>
+                            <label class="btn-secondary clickable" style="font-size: 12px; cursor: pointer;">
+                                ⬆️ بازیابی از فایل
+                                <input type="file" id="restore-file-input" accept="application/json" style="display: none;">
+                            </label>
+                            <button class="btn-danger clickable" id="clear-all-data-btn" style="font-size: 12px;">🗑️ حذف کامل داده‌ها</button>
+                        </div>
+                    </section>
+
+                    <!-- Suggestion Box -->
+                    <section class="dashboard-section glass" style="padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div class="section-header" style="margin-bottom: 16px;">
+                            <h2>💡 پیشنهاد و ایده</h2>
+                        </div>
+                        <textarea id="suggestion-text" rows="3" placeholder="ایده یا پیشنهاد خود را برای بهبود میو بوک بنویسید..." style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-primary); resize: vertical; font-family: var(--font-family); margin-bottom: 12px;"></textarea>
+                        <button class="btn-primary clickable" id="send-suggestion-btn" style="font-size: 12px;">ارسال پیشنهاد</button>
+                        <p id="suggestion-status" class="suggestion-status-text hidden" style="font-size: 12px; margin-top: 10px;"></p>
+                    </section>
+                </div>
+
             </div>
         </main>
     </div>
@@ -297,16 +465,7 @@
         </div>
     </div>
 
-    <!-- Hidden placeholders to prevent JS errors for removed widgets -->
-    <div id="clock-time" class="hidden"></div>
-    <div id="clock-date" class="hidden"></div>
-    <div id="greeting-text" class="hidden"></div>
-    <div id="goals-setup-card" class="hidden"></div>
-    <div id="goals-progress-area" class="hidden"></div>
-    <div id="weekly-chart-area" class="hidden"></div>
-    <div id="dist-chart-area" class="hidden"></div>
-    <div id="monthly-chart" class="hidden"></div>
-
+    <script src="../scripts/i18n.js"></script>
     <script src="../scripts/social-db.js"></script>
     <script src="dashboard.js"></script>
 </body>
