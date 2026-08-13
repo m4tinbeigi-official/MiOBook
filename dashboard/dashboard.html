@@ -159,10 +159,15 @@
                     <!-- Friends reading now + Quick composer -->
                     <div class="dashboard-two-col">
                         <section class="dashboard-section glass friends-now-section">
-                            <div class="section-header">
-                                <h2>اکنون در حال مطالعه</h2>
+                            <div class="section-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap: wrap;">
+                                <h2>دوستان در حال مطالعه</h2>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <input type="email" id="add-friend-input" placeholder="ایمیل دوست..." style="font-size:12px; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-primary); width: 150px;">
+                                    <button class="btn-secondary clickable" id="add-friend-btn" style="font-size:12px; padding:6px 12px; border-radius:8px;">+ افزودن دوست</button>
+                                </div>
                             </div>
-                            <div class="friends-now-row" id="friends-now-row"><!-- MOCK_FRIENDS_READING rendered here --></div>
+                            <div id="add-friend-feedback" style="font-size:11px; min-height:14px; margin-top:2px;"></div>
+                            <div class="friends-now-row" id="friends-now-row"><!-- real friend data rendered here --></div>
                         </section>
                         <section class="dashboard-section glass quick-note-section">
                             <div class="section-header">
@@ -269,6 +274,28 @@
                                     <span>ورود با اکانت گوگل (Gmail)</span>
                                 </button>
                                 <div id="login-error-msg" style="color: #e63946; margin-top: 12px; font-size: 12px; font-weight: 500;"></div>
+
+                                <div style="display: flex; align-items: center; gap: 10px; margin: 20px 0;">
+                                    <div style="flex:1; height:1px; background: var(--border-color);"></div>
+                                    <span style="color: var(--text-secondary); font-size: 12px;">یا</span>
+                                    <div style="flex:1; height:1px; background: var(--border-color);"></div>
+                                </div>
+
+                                <div id="phone-login-step-phone">
+                                    <input type="tel" id="phone-login-input" placeholder="شماره موبایل (مثلا 09121234567)" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 100px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; text-align: center; margin-bottom: 10px;" dir="ltr">
+                                    <button class="btn-secondary clickable" id="phone-otp-send-btn" style="width: 100%; padding: 10px 20px; border-radius: 100px; font-weight: bold; font-size: 13px;">
+                                        ارسال کد تایید پیامکی
+                                    </button>
+                                </div>
+
+                                <div id="phone-login-step-code" class="hidden" style="margin-top: 10px;">
+                                    <input type="text" id="phone-otp-input" placeholder="کد تایید" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 100px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; text-align: center; margin-bottom: 10px;" dir="ltr" inputmode="numeric">
+                                    <button class="btn-primary clickable" id="phone-otp-verify-btn" style="width: 100%; padding: 10px 20px; border-radius: 100px; font-weight: bold; font-size: 13px;">
+                                        تایید و ورود
+                                    </button>
+                                </div>
+
+                                <div id="phone-login-error-msg" style="color: #e63946; margin-top: 12px; font-size: 12px; font-weight: 500;"></div>
                             </div>
 
                             <div id="profile-logged-in" class="hidden" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">

@@ -1939,38 +1939,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // =====================================================================
-// 🐾 NEW DASHBOARD REDESIGN — VISUAL-ONLY MOCK DATA SECTIONS 🐾
-// Everything below is static/demo data for the new hero card, friends
-// "reading now" row, community list, activity feed, and the left-column
-// widgets (profile / pomodoro / Jalali calendar / weekly goal).
-// None of this reads or writes chrome.storage — it is purely illustrative
-// until real backend/social wiring is added later.
+// 🐾 DASHBOARD WIDGETS — real data 🐾
+// Friends "reading now" row, community list, activity feed, quick-note
+// composer, and the Pomodoro/weekly-goal widgets are all backed by the
+// real Turso-backed Express API (server/app.js) or existing
+// chrome.storage-based systems (books / readingGoal). No mock arrays.
 // =====================================================================
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- MOCK DATA (demo only, not persisted) ---
-    const MOCK_FRIENDS_READING = [
-        { name: 'نیلوفر', emoji: '🐱', book: 'ملت عشق', page: '۱۲۰/۳۰۰', status: 'reading' },
-        { name: 'آرش', emoji: '🐈', book: 'کیمیاگر', page: '۸۰/۱۸۰', status: 'reading' },
-        { name: 'مهسا', emoji: '🐾', book: 'بوف کور', page: '۵۰/۱۲۰', status: 'resting' },
-        { name: 'کیان', emoji: '📚', book: 'صد سال تنهایی', page: '۲۰۰/۴۵۰', status: 'reading' },
-        { name: 'ترانه', emoji: '🐈‍⬛', book: 'شازده کوچولو', page: '۶۰/۹۶', status: 'resting' }
-    ];
-
-    const MOCK_COMMUNITY_READING = [
-        { name: 'رضا احمدی', emoji: '📖', book: 'جنایت و مکافات', page: '۱۸۰', pct: '۴۰٪' },
-        { name: 'سمانه کریمی', emoji: '📕', book: 'خشم و هیاهو', page: '۹۰', pct: '۲۵٪' },
-        { name: 'بابک نوری', emoji: '📗', book: 'تفکر سریع و کند', page: '۳۰۰', pct: '۶۵٪' },
-        { name: 'الناز رستمی', emoji: '📘', book: 'میم', page: '۴۵', pct: '۱۵٪' }
-    ];
-
-    const MOCK_FRIENDS_ACTIVITY = [
-        { icon: '📖', text: '<strong>نیلوفر</strong> مطالعه‌ی «ملت عشق» را شروع کرد', time: '۲۰ دقیقه پیش' },
-        { icon: '🎉', text: '<strong>آرش</strong> کتاب «کیمیاگر» را به پایان رساند', time: '۱ ساعت پیش' },
-        { icon: '🍅', text: '<strong>مهسا</strong> یک جلسه پومودورو ۲۵ دقیقه‌ای انجام داد', time: '۳ ساعت پیش' },
-        { icon: '🔥', text: '<strong>کیان</strong> به رکورد ۷ روز متوالی مطالعه رسید', time: 'دیروز' },
-        { icon: '📚', text: '<strong>ترانه</strong> کتاب «شازده کوچولو» را به کتابخانه‌اش اضافه کرد', time: 'دیروز' }
-    ];
 
     function escapeHtmlLocal(str) {
         const div = document.createElement('div');
@@ -1978,56 +1953,280 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
-    // --- Render: friends reading now (horizontal row) ---
-    const friendsNowRow = document.getElementById('friends-now-row');
-    if (friendsNowRow) {
-        friendsNowRow.innerHTML = MOCK_FRIENDS_READING.map(f => `
-            <div class="friend-now-card">
-                <div class="friend-now-avatar-wrap">
-                    <div class="friend-now-avatar">${f.emoji}</div>
-                    <span class="friend-now-status-dot ${f.status}"></span>
-                </div>
-                <div class="friend-now-name">${escapeHtmlLocal(f.name)}</div>
-                <div class="friend-now-book">${escapeHtmlLocal(f.book)}</div>
-                <div class="friend-now-pages">صفحه ${f.page}</div>
-            </div>
-        `).join('');
+    // Returns the title of the book currently being read (first "reading" status book), or null.
+    function getCurrentBookTitle() {
+        return new Promise(resolve => {
+            chrome.storage.local.get(['books'], result => {
+                const books = result.books || [];
+                const reading = books.find(b => b.status === 'reading');
+                resolve(reading ? reading.title : null);
+            });
+        });
     }
 
-    // --- Render: community reading now (list) ---
+    async function isLoggedIn() {
+        const data = await chrome.storage.local.get(['auth']);
+        return !!data.auth;
+    }
+
+    // --- Render: friends reading now (horizontal row) + community reading list ---
+    // Community list (whole community, no follow-graph needed) — real /api/social-feed.
     const communityList = document.getElementById('community-reading-list');
-    if (communityList) {
-        communityList.innerHTML = MOCK_COMMUNITY_READING.map(u => `
-            <div class="community-reading-row">
-                <div class="cr-avatar">${u.emoji}</div>
-                <div class="cr-info">
-                    <div class="cr-name">${escapeHtmlLocal(u.name)}</div>
-                    <div class="cr-book">${escapeHtmlLocal(u.book)} · صفحه ${u.page}</div>
-                </div>
-                <div class="cr-pct">${u.pct}</div>
-            </div>
-        `).join('');
+
+    async function loadCommunityWidget() {
+        if (communityList) {
+            communityList.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">در حال بارگذاری... 🐾</div>';
+        }
+        try {
+            const feed = await fetchSocialStatuses();
+            if (!communityList) return;
+
+            if (feed.length === 0) {
+                communityList.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">میو! هنوز کسی وضعیت مطالعه‌اش را به اشتراک نگذاشته 🐾</div>';
+            } else {
+                communityList.innerHTML = feed.map(u => {
+                    const progress = u.totalPages > 0 ? Math.round((u.currentPage / u.totalPages) * 100) : 0;
+                    return `
+                        <div class="community-reading-row">
+                            <img class="cr-avatar" src="${escapeHtmlLocal(u.photoUrl || '../assets/icons/icon-48.png')}" alt="" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                            <div class="cr-info">
+                                <div class="cr-name">${escapeHtmlLocal(u.displayName)}</div>
+                                <div class="cr-book">${escapeHtmlLocal(u.bookTitle || 'بدون عنوان')} · صفحه ${(u.currentPage || 0).toLocaleString('fa-IR')}</div>
+                            </div>
+                            <div class="cr-pct">${progress.toLocaleString('fa-IR')}٪</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            console.error('Error loading community widget:', err);
+            if (communityList) {
+                communityList.innerHTML = `<div style="padding: 12px; color: #e63946; font-size: 12px;">خطا در دریافت اطلاعات جامعه: ${escapeHtmlLocal(err.message || 'اتصال برقرار نشد.')}</div>`;
+            }
+        }
+    }
+    loadCommunityWidget();
+
+    // --- Friends widget — real follow-graph via GET/POST/DELETE /api/friends ---
+    const friendsNowRow = document.getElementById('friends-now-row');
+    const addFriendInput = document.getElementById('add-friend-input');
+    const addFriendBtn = document.getElementById('add-friend-btn');
+    const addFriendFeedbackEl = document.getElementById('add-friend-feedback');
+
+    function setAddFriendFeedback(message, isError) {
+        if (!addFriendFeedbackEl) return;
+        addFriendFeedbackEl.innerText = message;
+        addFriendFeedbackEl.style.color = isError ? '#e63946' : '#2e6f40';
     }
 
-    // --- Render: friends activity feed ---
+    async function loadFriendsWidget() {
+        if (!friendsNowRow) return;
+
+        if (!(await isLoggedIn())) {
+            friendsNowRow.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">برای افزودن و مشاهده دوستان ابتدا با اکانت گوگل وارد شوید.</div>';
+            return;
+        }
+
+        friendsNowRow.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">در حال بارگذاری... 🐾</div>';
+
+        try {
+            const idToken = await getAuthToken();
+            if (!idToken) {
+                friendsNowRow.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">نشست ورود شما منقضی شده است.</div>';
+                return;
+            }
+
+            const res = await fetch(`${CUSTOM_SERVER_URL}/api/friends`, {
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            if (!res.ok) throw new Error('پاسخ نامعتبر از سرور');
+            const friends = await res.json();
+
+            if (!Array.isArray(friends) || friends.length === 0) {
+                friendsNowRow.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">میو! هنوز دوستی اضافه نکرده‌ای. ایمیل دوستت را در بالا وارد کن و «افزودن دوست» را بزن! 🐾</div>';
+                return;
+            }
+
+            friendsNowRow.innerHTML = friends.map(f => {
+                const progress = f.totalPages > 0 ? Math.round((f.currentPage / f.totalPages) * 100) : 0;
+                const statusClass = f.isReadingNow ? 'reading' : 'resting';
+                return `
+                    <div class="friend-now-card">
+                        <div class="friend-now-avatar-wrap">
+                            <img class="friend-now-avatar" src="${escapeHtmlLocal(f.photoUrl || '../assets/icons/icon-48.png')}" alt="" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            <span class="friend-now-status-dot ${statusClass}"></span>
+                        </div>
+                        <div class="friend-now-name">${escapeHtmlLocal(f.displayName)}</div>
+                        <div class="friend-now-book">${escapeHtmlLocal(f.bookTitle || 'کتابی ثبت نشده')}</div>
+                        <div class="friend-now-pages">${f.totalPages ? `صفحه ${(f.currentPage || 0).toLocaleString('fa-IR')}/${(f.totalPages || 0).toLocaleString('fa-IR')} (${progress.toLocaleString('fa-IR')}٪)` : ''}</div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error('Error loading friends widget:', err);
+            friendsNowRow.innerHTML = `<div style="padding: 12px; color: #e63946; font-size: 12px;">خطا در دریافت لیست دوستان: ${escapeHtmlLocal(err.message || 'اتصال برقرار نشد.')}</div>`;
+        }
+    }
+    loadFriendsWidget();
+
+    if (addFriendBtn) {
+        addFriendBtn.addEventListener('click', async () => {
+            const email = addFriendInput ? addFriendInput.value.trim() : '';
+            if (!email) return;
+
+            if (!(await isLoggedIn())) {
+                setAddFriendFeedback('برای افزودن دوست ابتدا با اکانت گوگل وارد شوید.', true);
+                return;
+            }
+
+            const idToken = await getAuthToken();
+            if (!idToken) {
+                setAddFriendFeedback('نشست ورود شما منقضی شده است. دوباره وارد شوید.', true);
+                return;
+            }
+
+            addFriendBtn.disabled = true;
+            setAddFriendFeedback('در حال افزودن...', false);
+
+            try {
+                const res = await fetch(`${CUSTOM_SERVER_URL}/api/friends`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({ friendEmail: email })
+                });
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'خطا در افزودن دوست.');
+                }
+
+                setAddFriendFeedback(`${data.friend ? data.friend.displayName : ''} به دوستان اضافه شد! 🐾`, false);
+                if (addFriendInput) addFriendInput.value = '';
+                loadFriendsWidget();
+            } catch (err) {
+                console.error('Error adding friend:', err);
+                setAddFriendFeedback(err.message || 'اتصال برقرار نشد.', true);
+            } finally {
+                addFriendBtn.disabled = false;
+            }
+        });
+    }
+
+    // --- Render: friends activity feed (real /api/activity-feed) ---
+    const ACTIVITY_ICON_MAP = {
+        started_reading: '📖',
+        finished_book: '🎉',
+        pomodoro_session: '🍅',
+        added_book: '📚',
+        streak: '🔥'
+    };
+    const ACTIVITY_TEXT_MAP = {
+        started_reading: (n, b) => `<strong>${n}</strong> مطالعه‌ی «${b}» را شروع کرد`,
+        finished_book: (n, b) => `<strong>${n}</strong> کتاب «${b}» را به پایان رساند`,
+        pomodoro_session: (n, b, d) => `<strong>${n}</strong> یک جلسه پومودورو ${d ? `(${escapeHtmlLocal(d)}) ` : ''}${b ? `روی «${b}» ` : ''}انجام داد`,
+        added_book: (n, b) => `<strong>${n}</strong> کتاب «${b}» را به کتابخانه‌اش اضافه کرد`,
+        streak: (n, b, d) => `<strong>${n}</strong> ${d || 'به یک رکورد مطالعه متوالی'} رسید`
+    };
+
     const activityFeed = document.getElementById('friends-activity-feed');
-    if (activityFeed) {
-        activityFeed.innerHTML = MOCK_FRIENDS_ACTIVITY.map(a => `
-            <div class="activity-item">
-                <span class="activity-icon">${a.icon}</span>
-                <span class="activity-text">${a.text}<span class="activity-time">${a.time}</span></span>
-            </div>
-        `).join('');
+
+    async function loadActivityFeed() {
+        if (!activityFeed) return;
+        activityFeed.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">در حال بارگذاری... 🐾</div>';
+        try {
+            const res = await fetch(`${CUSTOM_SERVER_URL}/api/activity-feed`);
+            if (!res.ok) throw new Error('پاسخ نامعتبر از سرور');
+            const events = await res.json();
+
+            if (!Array.isArray(events) || events.length === 0) {
+                activityFeed.innerHTML = '<div style="padding: 12px; color: var(--text-secondary); font-size: 12px;">میو! هنوز فعالیتی ثبت نشده است. 🐾</div>';
+                return;
+            }
+
+            activityFeed.innerHTML = events.map(e => {
+                const icon = ACTIVITY_ICON_MAP[e.type] || '📌';
+                const textFn = ACTIVITY_TEXT_MAP[e.type];
+                const name = escapeHtmlLocal(e.displayName || 'کاربر ناشناس');
+                const book = escapeHtmlLocal(e.bookTitle || '');
+                const detail = escapeHtmlLocal(e.detail || '');
+                const text = textFn ? textFn(name, book, detail) : `<strong>${name}</strong> ${detail || 'یک فعالیت جدید ثبت کرد'}`;
+                return `
+                    <div class="activity-item">
+                        <span class="activity-icon">${icon}</span>
+                        <span class="activity-text">${text}<span class="activity-time">${getRelativeTime(e.createdAt)}</span></span>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error('Error loading activity feed:', err);
+            activityFeed.innerHTML = `<div style="padding: 12px; color: #e63946; font-size: 12px;">خطا در دریافت فید فعالیت‌ها: ${escapeHtmlLocal(err.message || 'اتصال برقرار نشد.')}</div>`;
+        }
+    }
+    loadActivityFeed();
+
+    // --- Quick note composer — real authenticated POST /api/notes ---
+    const quickNotePostBtn = document.getElementById('quick-note-post-btn');
+    const quickNoteInputEl = document.getElementById('quick-note-input');
+    let quickNoteFeedbackEl = document.getElementById('quick-note-feedback');
+    if (!quickNoteFeedbackEl && quickNotePostBtn && quickNotePostBtn.parentNode) {
+        quickNoteFeedbackEl = document.createElement('div');
+        quickNoteFeedbackEl.id = 'quick-note-feedback';
+        quickNoteFeedbackEl.style.cssText = 'font-size: 12px; margin-top: 8px; min-height: 16px;';
+        quickNotePostBtn.parentNode.appendChild(quickNoteFeedbackEl);
     }
 
-    // --- Quick note / composer (mock, local only — no persistence yet) ---
-    const quickNotePostBtn = document.getElementById('quick-note-post-btn');
+    function setQuickNoteFeedback(message, isError) {
+        if (!quickNoteFeedbackEl) return;
+        quickNoteFeedbackEl.innerText = message;
+        quickNoteFeedbackEl.style.color = isError ? '#e63946' : '#2e6f40';
+    }
+
     if (quickNotePostBtn) {
-        quickNotePostBtn.addEventListener('click', () => {
-            const input = document.getElementById('quick-note-input');
-            if (input && input.value.trim()) {
-                alert('یادداشت شما ذخیره شد! (این بخش هنوز نمایشی است و به سرور متصل نیست)');
-                input.value = '';
+        quickNotePostBtn.addEventListener('click', async () => {
+            const input = quickNoteInputEl || document.getElementById('quick-note-input');
+            const noteText = input ? input.value.trim() : '';
+            if (!noteText) return;
+
+            if (!(await isLoggedIn())) {
+                setQuickNoteFeedback('برای ثبت یادداشت ابتدا با اکانت گوگل وارد شوید.', true);
+                return;
+            }
+
+            const idToken = await getAuthToken();
+            if (!idToken) {
+                setQuickNoteFeedback('نشست ورود شما منقضی شده است. دوباره وارد شوید.', true);
+                return;
+            }
+
+            quickNotePostBtn.disabled = true;
+            setQuickNoteFeedback('در حال ذخیره...', false);
+
+            try {
+                const bookTitle = await getCurrentBookTitle();
+                const res = await fetch(`${CUSTOM_SERVER_URL}/api/notes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({ bookTitle: bookTitle || '', pageNumber: 0, noteText })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'خطا در ذخیره یادداشت.');
+                }
+
+                if (input) input.value = '';
+                setQuickNoteFeedback('یادداشت شما ذخیره شد! 🐾', false);
+            } catch (err) {
+                console.error('Error posting note:', err);
+                setQuickNoteFeedback(err.message || 'اتصال برقرار نشد.', true);
+            } finally {
+                quickNotePostBtn.disabled = false;
             }
         });
     }
@@ -2174,8 +2373,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     renderCalendar();
 
-    // --- Pomodoro widget (real countdown via setInterval, local only — no persistence) ---
-    const POMODORO_WORK_SECONDS = 25 * 60;
+    // --- Pomodoro widget (real countdown via setInterval; completed sessions are
+    // persisted to the server via POST /api/pomodoro-sessions when the user is logged in) ---
+    const POMODORO_WORK_MINUTES = 25;
+    const POMODORO_WORK_SECONDS = POMODORO_WORK_MINUTES * 60;
     let pomodoroSecondsLeft = POMODORO_WORK_SECONDS - 1; // starts at 24:59 to match the reference design
     let pomodoroRunning = true;
     let pomodoroInterval = null;
@@ -2187,6 +2388,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const pomodoroResetBtn = document.getElementById('pomodoro-reset-btn');
     const pomodoroStatusEl = document.getElementById('pomodoro-status');
     const pomodoroSessionCurrentEl = document.getElementById('pomodoro-session-current');
+    let pomodoroLoginHintEl = null;
+
+    async function renderPomodoroLoginHint() {
+        if (await isLoggedIn()) {
+            if (pomodoroLoginHintEl) pomodoroLoginHintEl.style.display = 'none';
+            return;
+        }
+        if (!pomodoroLoginHintEl && pomodoroTimerEl && pomodoroTimerEl.parentNode) {
+            pomodoroLoginHintEl = document.createElement('div');
+            pomodoroLoginHintEl.id = 'pomodoro-login-hint';
+            pomodoroLoginHintEl.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-top: 6px;';
+            pomodoroLoginHintEl.innerText = 'برای ثبت جلسات وارد حساب کاربری شوید 🐾';
+            pomodoroTimerEl.parentNode.appendChild(pomodoroLoginHintEl);
+        }
+        if (pomodoroLoginHintEl) pomodoroLoginHintEl.style.display = '';
+    }
+    renderPomodoroLoginHint();
+
+    // Persist a completed session to the server (no-op, gracefully, if not logged in)
+    async function persistPomodoroSession() {
+        try {
+            if (!(await isLoggedIn())) return;
+            const idToken = await getAuthToken();
+            if (!idToken) return;
+
+            const bookTitle = await getCurrentBookTitle();
+            const res = await fetch(`${CUSTOM_SERVER_URL}/api/pomodoro-sessions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ bookTitle: bookTitle || '', durationMinutes: POMODORO_WORK_MINUTES })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                console.error('Failed to persist pomodoro session:', err);
+                return;
+            }
+            // Refresh activity feed + weekly goal widget so the new session shows up.
+            loadActivityFeed();
+            loadWeeklyGoalWidget();
+        } catch (err) {
+            console.error('Pomodoro session network error:', err);
+        }
+    }
 
     function renderPomodoroTimer() {
         if (!pomodoroTimerEl) return;
@@ -2206,6 +2453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (pomodoroStatusEl) pomodoroStatusEl.innerText = 'پایان جلسه! کمی استراحت کن 🐾';
             if (pomodoroToggleBtn) pomodoroToggleBtn.innerText = 'شروع مجدد';
+            persistPomodoroSession();
             return;
         }
         pomodoroSecondsLeft--;
@@ -2254,4 +2502,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderPomodoroTimer();
     if (pomodoroRunning) startPomodoro();
+
+    // --- Weekly goal widget — real data from GET /api/pomodoro-sessions ---
+    // There's no separate "weekly hours" goal system in the extension yet, so this
+    // widget shows real minutes read this week (sum of persisted Pomodoro sessions)
+    // against a disclosed, non-arbitrary target of one 25-minute Pomodoro/day (175 min/week).
+    const WEEKLY_GOAL_TARGET_MINUTES = POMODORO_WORK_MINUTES * 7;
+    const weeklyGoalCurrentEl = document.getElementById('weekly-goal-current');
+    const weeklyGoalTargetEl = document.getElementById('weekly-goal-target');
+    const weeklyGoalFillEl = document.getElementById('weekly-goal-fill');
+    const weeklyGoalTextEl = document.querySelector('.weekly-goal-text');
+
+    function startOfWeek() {
+        // Persian week starts on Saturday.
+        const now = new Date();
+        const day = now.getDay(); // Sun=0..Sat=6
+        const diffToSaturday = (day + 1) % 7;
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToSaturday);
+        start.setHours(0, 0, 0, 0);
+        return start.getTime();
+    }
+
+    async function loadWeeklyGoalWidget() {
+        if (!weeklyGoalCurrentEl && !weeklyGoalFillEl) return;
+
+        if (!(await isLoggedIn())) {
+            if (weeklyGoalTextEl) weeklyGoalTextEl.innerText = 'برای مشاهده پیشرفت هفتگی وارد حساب کاربری شوید.';
+            if (weeklyGoalFillEl) weeklyGoalFillEl.style.width = '0%';
+            return;
+        }
+
+        try {
+            const idToken = await getAuthToken();
+            if (!idToken) return;
+
+            const res = await fetch(`${CUSTOM_SERVER_URL}/api/pomodoro-sessions`, {
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            if (!res.ok) throw new Error('پاسخ نامعتبر از سرور');
+            const sessions = await res.json();
+
+            const weekStart = startOfWeek();
+            const weeklyMinutes = (Array.isArray(sessions) ? sessions : [])
+                .filter(s => s.completedAt >= weekStart)
+                .reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+
+            const pct = Math.min(100, Math.round((weeklyMinutes / WEEKLY_GOAL_TARGET_MINUTES) * 100));
+
+            if (weeklyGoalCurrentEl) weeklyGoalCurrentEl.innerText = weeklyMinutes.toLocaleString('fa-IR');
+            if (weeklyGoalTargetEl) weeklyGoalTargetEl.innerText = WEEKLY_GOAL_TARGET_MINUTES.toLocaleString('fa-IR');
+            if (weeklyGoalTextEl) {
+                weeklyGoalTextEl.innerHTML = `<span id="weekly-goal-current">${weeklyMinutes.toLocaleString('fa-IR')}</span> از <span id="weekly-goal-target">${WEEKLY_GOAL_TARGET_MINUTES.toLocaleString('fa-IR')}</span> دقیقه مطالعه (پومودورو)`;
+            }
+            if (weeklyGoalFillEl) weeklyGoalFillEl.style.width = `${pct}%`;
+        } catch (err) {
+            console.error('Error loading weekly goal widget:', err);
+            if (weeklyGoalTextEl) weeklyGoalTextEl.innerText = 'خطا در دریافت پیشرفت هفتگی.';
+        }
+    }
+    loadWeeklyGoalWidget();
 });

@@ -185,6 +185,48 @@ async function logout() {
   await chrome.storage.local.remove(['auth']);
 }
 
+// Request an OTP code be sent to a phone number via sms.ir
+async function requestPhoneOtp(phone) {
+  const res = await fetch(`${CUSTOM_SERVER_URL}/api/auth/otp/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone })
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || "خطا در ارسال کد تایید.");
+  }
+  return data;
+}
+
+// Verify the OTP code and log the user in with a phone number
+async function loginWithPhoneOtp(phone, code) {
+  const res = await fetch(`${CUSTOM_SERVER_URL}/api/auth/otp/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code })
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || "کد تایید نامعتبر است.");
+  }
+
+  const authInfo = {
+    uid: data.uid,
+    displayName: data.displayName || data.phone,
+    email: '',
+    phone: data.phone,
+    photoUrl: '../assets/icons/icon-48.png',
+    idToken: data.token, // Our own session token, sent as Bearer to the server
+    expiresAt: data.expiresAt
+  };
+
+  await chrome.storage.local.set({ auth: authInfo });
+  return authInfo;
+}
+
 // Push status to Server/Firestore
 async function publishReadingStatus(bookTitle, author, currentPage, totalPages, status, isReadingNow = false) {
   if (!isConfigured()) return;
